@@ -1,4 +1,4 @@
-import Day01 from "./days/day01";
+import Day01 from './days/day01';
 
 [Day01].forEach((Day, i) => {
   const day = new Day();
