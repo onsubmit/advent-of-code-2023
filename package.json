@@ -13,9 +13,11 @@
   "author": "Andy Young <onsubmit@outlook.com>",
   "license": "MIT",
   "dependencies": {
+    "n-readlines": "^1.0.1",
     "nodemon": "^3.0.1"
   },
   "devDependencies": {
+    "@types/n-readlines": "^1.0.6",
     "@types/node": "^20.10.0",
     "@typescript-eslint/eslint-plugin": "^6.13.1",
     "@typescript-eslint/parser": "^6.12.0",
