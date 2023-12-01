@@ -7,7 +7,8 @@
   "scripts": {
     "compile": "tsc && node dist/index.js",
     "watch": "nodemon --watch src/ --exec \"npm run compile\" -e ts",
-    "build": "npx ts-node src/index.ts"
+    "build": "npx ts-node src/index.ts",
+    "lint": "eslint . --ext ts --report-unused-disable-directives --max-warnings 0"
   },
   "author": "Andy Young <onsubmit@outlook.com>",
   "license": "MIT",
@@ -16,11 +17,16 @@
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
-    "@typescript-eslint/eslint-plugin": "^6.12.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.1",
     "@typescript-eslint/parser": "^6.12.0",
     "eslint": "^8.54.0",
     "eslint-config-prettier": "^9.0.0",
+    "eslint-config-standard-with-typescript": "^40.0.0",
+    "eslint-plugin-import": "^2.29.0",
+    "eslint-plugin-n": "^16.3.1",
     "eslint-plugin-prettier": "^5.0.1",
+    "eslint-plugin-promise": "^6.1.1",
+    "eslint-plugin-simple-import-sort": "^10.0.0",
     "prettier": "^3.1.0",
     "prettier-plugin-organize-imports": "^3.2.4",
     "ts-node": "^10.9.1",
