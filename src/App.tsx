@@ -49,7 +49,10 @@ function getDayPanelProps(
 export default function App() {
   const [value, setValue] = useState(0);
 
-  const DayComponents = [lazy(() => import('./components/day01'))];
+  const DayComponents = [
+    lazy(() => import('./components/day02')),
+    lazy(() => import('./components/day01')),
+  ];
   return (
     <Box sx={{ width: '100%' }}>
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
