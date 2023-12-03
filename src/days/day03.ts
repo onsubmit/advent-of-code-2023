@@ -5,22 +5,20 @@ type Location = {
   column: number;
 };
 
-type EnginePart = {
-  type: 'number' | 'symbol';
+type EngineNumberPart = {
   value: string;
+  valueAsNumber: number;
   location: Location;
 };
 
 type EngineSymbolData = {
   location: Location;
-  neighboringParts: Array<EnginePart>;
+  neighboringParts: Array<EngineNumberPart>;
 };
 
 type EngineSymbols = Map<string, Array<EngineSymbolData>>;
 
-export const getPartOneSolution = (input: string): string => {
-  const lines = input.split('\n').filter(Boolean);
-
+const getEngineSymbols = (lines: string[]): EngineSymbols => {
   const engineSymbols: EngineSymbols = new Map();
   lines.forEach((line, lineNum) => {
     for (let i = 0; i < line.length; i++) {
@@ -38,9 +36,9 @@ export const getPartOneSolution = (input: string): string => {
   });
 
   lines.forEach((line, lineNum) => {
-    const engineNumbers = [...line.matchAll(/\d+/g)].map<EnginePart>((match) => ({
-      type: 'number',
+    const engineNumbers = [...line.matchAll(/\d+/g)].map<EngineNumberPart>((match) => ({
       value: match[0],
+      valueAsNumber: parseInt(match[0], 10),
       location: { row: lineNum, column: match.index! },
     }));
 
@@ -59,6 +57,13 @@ export const getPartOneSolution = (input: string): string => {
     }
   });
 
+  return engineSymbols;
+};
+
+export const getPartOneSolution = (input: string): string => {
+  const lines = input.split('\n').filter(Boolean);
+  const engineSymbols = getEngineSymbols(lines);
+
   const partNumberValues: number[] = [];
   engineSymbols.forEach((symbolData) => {
     symbolData.forEach((symbol) => {
@@ -73,81 +78,15 @@ export const getPartOneSolution = (input: string): string => {
 
 export const getPartTwoSolution = (input: string): string => {
   const lines = input.split('\n').filter(Boolean);
+  const engineSymbols = getEngineSymbols(lines);
 
-  const symbolLocations = lines.flatMap((line, lineNum) => {
-    const indices: Array<{ index: number; value: string }> = [];
-    for (let i = 0; i < line.length; i++) {
-      if (line[i] !== '.' && !Number.isInteger(parseInt(line[i], 10))) {
-        indices.push({ index: i, value: line[i] });
-      }
-    }
+  const gears = engineSymbols
+    .get('*')
+    ?.filter(({ neighboringParts }) => neighboringParts.length === 2)
+    .map(
+      ({ neighboringParts }) =>
+        neighboringParts[0].valueAsNumber * neighboringParts[1].valueAsNumber
+    );
 
-    return indices.map((x) => ({ lineNum, column: x.index, value: x.value }));
-  });
-
-  const partNumbers: Array<{
-    location: { lineNum: number; index: number };
-    value: number;
-    neighboringSymbols: Array<{
-      value: string;
-      location: { lineNum: number; index: number };
-    }>;
-  }> = [];
-
-  lines.forEach((line, lineNum) => {
-    const regex = new RegExp(/\d+/g);
-    const matches = [...line.matchAll(regex)].map((x) => ({ index: x.index!, value: x.at(0)! }));
-
-    for (const number of matches) {
-      const neighboringSymbols: Array<{
-        value: string;
-        location: { lineNum: number; index: number };
-      }> = [];
-      symbolLocations.forEach((symbol) => {
-        if (
-          Math.abs(symbol.lineNum - lineNum) <= 1 &&
-          symbol.column >= number.index - 1 &&
-          symbol.column <= number.index + number.value.length
-        ) {
-          neighboringSymbols.push({
-            value: lines[symbol.lineNum]?.[symbol.column],
-            location: { lineNum: symbol.lineNum, index: symbol.column },
-          });
-        }
-      });
-
-      if (symbolLocations.length) {
-        partNumbers.push({
-          location: { lineNum, index: number.index },
-          value: parseInt(number.value, 10),
-          neighboringSymbols,
-        });
-      }
-    }
-  });
-
-  const gearRatios: number[] = [];
-  symbolLocations
-    .filter((s) => s.value === '*')
-    .forEach((symbol) => {
-      const neighboringPartNumbers: number[] = [];
-      partNumbers.forEach((p) => {
-        if (
-          p.neighboringSymbols.find(
-            (s) =>
-              s.value === '*' &&
-              s.location.lineNum === symbol.lineNum &&
-              s.location.index === symbol.column
-          )
-        ) {
-          neighboringPartNumbers.push(p.value);
-        }
-      });
-
-      if (neighboringPartNumbers.length === 2) {
-        gearRatios.push(neighboringPartNumbers[0]! * neighboringPartNumbers[1]!);
-      }
-    });
-
-  return sumArray(gearRatios).toString();
+  return sumArray(gears!).toString();
 };
