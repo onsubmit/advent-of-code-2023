@@ -53,6 +53,7 @@ export default function App() {
     lazy(() => import('./components/day02')),
     lazy(() => import('./components/day01')),
   ];
+
   return (
     <Box sx={{ width: '100%' }}>
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
