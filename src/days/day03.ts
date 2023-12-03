@@ -1,44 +1,74 @@
 import { sumArray } from '../sumArray';
 
+type Location = {
+  row: number;
+  column: number;
+};
+
+type EnginePart = {
+  type: 'number' | 'symbol';
+  value: string;
+  location: Location;
+};
+
+type EngineSymbolData = {
+  location: Location;
+  neighboringParts: Array<EnginePart>;
+};
+
+type EngineSymbols = Map<string, Array<EngineSymbolData>>;
+
 export const getPartOneSolution = (input: string): string => {
   const lines = input.split('\n').filter(Boolean);
 
-  const symbolLocations = lines.flatMap((line, lineNum) => {
-    const indices: number[] = [];
-    for (let i = 0; i < line.length; i++) {
-      if (line[i] !== '.' && !Number.isInteger(parseInt(line[i], 10))) {
-        indices.push(i);
-      }
-    }
-
-    return indices.map((x) => ({ lineNum, column: x }));
-  });
-
-  const partNumbers: number[] = [];
+  const engineSymbols: EngineSymbols = new Map();
   lines.forEach((line, lineNum) => {
-    const regex = new RegExp(/\d+/g);
-    const matches = [...line.matchAll(regex)].map((x) => ({ index: x.index!, value: x.at(0)! }));
-
-    for (const number of matches) {
-      const isPartNumber = symbolLocations.some((symbol) => {
-        if (
-          Math.abs(symbol.lineNum - lineNum) <= 1 &&
-          symbol.column >= number.index - 1 &&
-          symbol.column <= number.index + number.value.length
-        ) {
-          return true;
-        } else {
-          return false;
+    for (let i = 0; i < line.length; i++) {
+      const symbol = line[i];
+      if (symbol !== '.' && !Number.isInteger(parseInt(symbol, 10))) {
+        if (!engineSymbols.has(symbol)) {
+          engineSymbols.set(symbol, []);
         }
-      });
 
-      if (isPartNumber) {
-        partNumbers.push(parseInt(number.value, 10));
+        engineSymbols
+          .get(symbol)
+          ?.push({ location: { row: lineNum, column: i }, neighboringParts: [] });
       }
     }
   });
 
-  return sumArray(partNumbers).toString();
+  lines.forEach((line, lineNum) => {
+    const engineNumbers = [...line.matchAll(/\d+/g)].map<EnginePart>((match) => ({
+      type: 'number',
+      value: match[0],
+      location: { row: lineNum, column: match.index! },
+    }));
+
+    for (const engineNumber of engineNumbers) {
+      engineSymbols.forEach((symbolData) => {
+        symbolData.forEach((symbol) => {
+          if (
+            Math.abs(symbol.location.row - lineNum) <= 1 &&
+            symbol.location.column >= engineNumber.location.column - 1 &&
+            symbol.location.column <= engineNumber.location.column + engineNumber.value.length
+          ) {
+            symbol.neighboringParts.push(engineNumber);
+          }
+        });
+      });
+    }
+  });
+
+  const partNumberValues: number[] = [];
+  engineSymbols.forEach((symbolData) => {
+    symbolData.forEach((symbol) => {
+      symbol.neighboringParts.forEach(({ value }) => {
+        partNumberValues.push(parseInt(value, 10));
+      });
+    });
+  });
+
+  return sumArray(partNumberValues).toString();
 };
 
 export const getPartTwoSolution = (input: string): string => {
