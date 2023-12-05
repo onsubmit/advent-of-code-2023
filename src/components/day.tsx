@@ -51,7 +51,7 @@ export default function Day({ day, getPartOneSolution, getPartTwoSolution }: Day
             multiline
             rows={4}
             value={part1State.input}
-            onChange={(e) => setPart1State((s) => ({ ...s, input: e.currentTarget.value }))}
+            onChange={(e) => setPart1State((s) => ({ ...s, input: e.target.value }))}
           />
           <TextField label="Part 1 output" disabled value={part1State.output} />
           <TextField label="Part 1 timing" disabled value={part1State.timing} />
@@ -102,7 +102,7 @@ export default function Day({ day, getPartOneSolution, getPartTwoSolution }: Day
             multiline
             rows={4}
             value={part2State.input}
-            onChange={(e) => setPart2State((s) => ({ ...s, input: e.currentTarget.value }))}
+            onChange={(e) => setPart2State((s) => ({ ...s, input: e.target.value }))}
           />
           <TextField label="Part 2 output" disabled value={part2State.output} />
           <TextField label="Part 2 timing" disabled value={part2State.timing} />
