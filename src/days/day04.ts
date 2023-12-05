@@ -30,14 +30,14 @@ const getCards = (lines: string[]): Card[] => {
       .map((s) => parseInt(s, 10));
 
     const numWinningNumbersOnCard = numbersOnCard.filter((num) => winningNumbers.has(num)).length;
-    for (let i = 0; i <= (numExtraCopies.get(cardNumber) ?? 0); i++) {
-      for (let j = 1; j <= numWinningNumbersOnCard; j++) {
-        if (numExtraCopies.has(cardNumber + j)) {
-          const value = numExtraCopies.get(cardNumber + j)!;
-          numExtraCopies.set(cardNumber + j, value + 1);
-        } else {
-          numExtraCopies.set(cardNumber + j, 1);
-        }
+    const extraCopiesWon = (numExtraCopies.get(cardNumber) ?? 0) + 1;
+    for (let j = 1; j <= numWinningNumbersOnCard; j++) {
+      const cardNumToWin = cardNumber + j;
+      if (numExtraCopies.has(cardNumToWin)) {
+        const currentNumberOfCopies = numExtraCopies.get(cardNumToWin)!;
+        numExtraCopies.set(cardNumToWin, currentNumberOfCopies + extraCopiesWon);
+      } else {
+        numExtraCopies.set(cardNumToWin, extraCopiesWon);
       }
     }
 
