@@ -14,6 +14,8 @@ export default function Day({ day, getPartOneSolution, getPartTwoSolution }: Day
   const [partTwoInput, setPartTwoInput] = useState('');
   const [partOneOutput, setPartOneOutput] = useState('');
   const [partTwoOutput, setPartTwoOutput] = useState('');
+  const [partOneTiming, setPartOneTiming] = useState('');
+  const [partTwoTiming, setPartTwoTiming] = useState('');
 
   return (
     <div className={styles.day}>
@@ -26,9 +28,16 @@ export default function Day({ day, getPartOneSolution, getPartTwoSolution }: Day
         onChange={(e) => setPartOneInput(e.currentTarget.value)}
       />
       <TextField label="Part 1 output" disabled value={partOneOutput} />
+      <TextField label="Part 1 timing" disabled value={partOneTiming} />
       <Button
         variant="contained"
-        onClick={() => setPartOneOutput(getPartOneSolution(partOneInput))}
+        onClick={() => {
+          const startTime = performance.now();
+          const solution = getPartOneSolution(partOneInput);
+          const endTime = performance.now();
+          setPartOneOutput(solution);
+          setPartOneTiming(`${endTime - startTime}ms`);
+        }}
       >
         Get part 1 solution
       </Button>
@@ -41,9 +50,16 @@ export default function Day({ day, getPartOneSolution, getPartTwoSolution }: Day
         onChange={(e) => setPartTwoInput(e.currentTarget.value)}
       />
       <TextField label="Part 2 output" disabled value={partTwoOutput} />
+      <TextField label="Part 2 timing" disabled value={partTwoTiming} />
       <Button
         variant="contained"
-        onClick={() => setPartTwoOutput(getPartTwoSolution(partTwoInput))}
+        onClick={() => {
+          const startTime = performance.now();
+          const solution = getPartTwoSolution(partOneInput);
+          const endTime = performance.now();
+          setPartTwoOutput(solution);
+          setPartTwoTiming(`${endTime - startTime}ms`);
+        }}
       >
         Get part 2 solution
       </Button>
