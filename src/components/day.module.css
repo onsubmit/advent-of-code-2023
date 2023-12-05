@@ -3,4 +3,18 @@
   flex-direction: column;
   gap: 1rem;
   width: 20rem;
+
+  .buttonRow {
+    display: inline-flex;
+    gap: 1rem;
+
+    .getSolution {
+      flex-grow: 1;
+    }
+
+    .iterations {
+      flex-basis: 25%;
+      flex-shrink: 1;
+    }
+  }
 }
