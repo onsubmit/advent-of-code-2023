@@ -1,4 +1,4 @@
-import { Button, TextField } from '@mui/material';
+import { Button, Link, TextField } from '@mui/material';
 import { useState } from 'react';
 
 import styles from './day.module.css';
@@ -34,6 +34,12 @@ export default function Day({ day, getPartOneSolution, getPartTwoSolution }: Day
   return (
     <div className={styles.day}>
       <h1>Day {day}</h1>
+      <Link href={`https://adventofcode.com/2023/day/${day}`} target="_blank">
+        Problem
+      </Link>
+      <Link href={`https://adventofcode.com/2023/day/${day}/input`} target="_blank">
+        Input
+      </Link>
       <TextField
         label="Part 1 input"
         multiline
