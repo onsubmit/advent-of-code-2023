@@ -1,35 +1,29 @@
-type Data = {
-  destinationRangeStart: number;
-  sourceRangeStart: number;
-  rangeLength: number;
+type RangeData = {
+  destinationStart: number;
+  sourceStart: number;
+  length: number;
 };
+
+const mapTypes = [
+  'seed-to-soil',
+  'soil-to-fertilizer',
+  'fertilizer-to-water',
+  'water-to-light',
+  'light-to-temperature',
+  'temperature-to-humidity',
+  'humidity-to-location',
+] as const;
 
 export const getPartOneSolution = (input: string): string => {
   const lines = input.split('\n');
 
   let seeds: number[] = [];
-  const seedToSoil: Array<Data> = [];
-  const soilToFertilizer: Array<Data> = [];
-  const fertilizerToWater: Array<Data> = [];
-  const waterToLight: Array<Data> = [];
-  const lightToTemperature: Array<Data> = [];
-  const temperatureToHumidity: Array<Data> = [];
-  const humidityToLocation: Array<Data> = [];
+  const maps: Array<Array<RangeData>> = [];
 
-  let mapType:
-    | 'none'
-    | 'seed-to-soil'
-    | 'soil-to-fertilizer'
-    | 'fertilizer-to-water'
-    | 'water-to-light'
-    | 'light-to-temperature'
-    | 'temperature-to-humidity'
-    | 'humidity-to-location' = 'none';
-
-  lines.forEach((line) => {
+  for (const line of lines) {
     if (!line.trim()) {
-      mapType = 'none';
-      return;
+      maps.push([]);
+      break;
     }
 
     if (line.startsWith('seeds:')) {
@@ -39,202 +33,37 @@ export const getPartOneSolution = (input: string): string => {
         .split(' ')
         .filter(Boolean)
         .map((d) => parseInt(d, 10));
-      return;
+      break;
     }
 
-    if (line.startsWith('seed-to-soil map:')) {
-      mapType = 'seed-to-soil';
-      return;
+    if (mapTypes.some((mapType) => line.startsWith(mapType))) {
+      break;
     }
 
-    if (mapType === 'seed-to-soil') {
-      const [destinationRangeStart, sourceRangeStart, rangeLength] = line
-        .split(' ')
-        .filter(Boolean)
-        .map((d) => parseInt(d, 10));
+    const [destinationRangeStart, sourceRangeStart, rangeLength] = line
+      .split(' ')
+      .filter(Boolean)
+      .map((d) => parseInt(d, 10));
 
-      seedToSoil.push({
-        destinationRangeStart,
-        sourceRangeStart,
-        rangeLength,
-      });
-
-      return;
-    }
-
-    if (line.startsWith('soil-to-fertilizer map:')) {
-      mapType = 'soil-to-fertilizer';
-      return;
-    }
-
-    if (mapType === 'soil-to-fertilizer') {
-      const [destinationRangeStart, sourceRangeStart, rangeLength] = line
-        .split(' ')
-        .filter(Boolean)
-        .map((d) => parseInt(d, 10));
-
-      soilToFertilizer.push({
-        destinationRangeStart,
-        sourceRangeStart,
-        rangeLength,
-      });
-
-      return;
-    }
-
-    if (line.startsWith('fertilizer-to-water map:')) {
-      mapType = 'fertilizer-to-water';
-      return;
-    }
-
-    if (mapType === 'fertilizer-to-water') {
-      const [destinationRangeStart, sourceRangeStart, rangeLength] = line
-        .split(' ')
-        .filter(Boolean)
-        .map((d) => parseInt(d, 10));
-
-      fertilizerToWater.push({
-        destinationRangeStart,
-        sourceRangeStart,
-        rangeLength,
-      });
-
-      return;
-    }
-
-    if (line.startsWith('water-to-light map:')) {
-      mapType = 'water-to-light';
-      return;
-    }
-
-    if (mapType === 'water-to-light') {
-      const [destinationRangeStart, sourceRangeStart, rangeLength] = line
-        .split(' ')
-        .filter(Boolean)
-        .map((d) => parseInt(d, 10));
-
-      waterToLight.push({
-        destinationRangeStart,
-        sourceRangeStart,
-        rangeLength,
-      });
-
-      return;
-    }
-
-    if (line.startsWith('light-to-temperature map:')) {
-      mapType = 'light-to-temperature';
-      return;
-    }
-
-    if (mapType === 'light-to-temperature') {
-      const [destinationRangeStart, sourceRangeStart, rangeLength] = line
-        .split(' ')
-        .filter(Boolean)
-        .map((d) => parseInt(d, 10));
-
-      lightToTemperature.push({
-        destinationRangeStart,
-        sourceRangeStart,
-        rangeLength,
-      });
-
-      return;
-    }
-
-    if (line.startsWith('temperature-to-humidity map:')) {
-      mapType = 'temperature-to-humidity';
-      return;
-    }
-
-    if (mapType === 'temperature-to-humidity') {
-      const [destinationRangeStart, sourceRangeStart, rangeLength] = line
-        .split(' ')
-        .filter(Boolean)
-        .map((d) => parseInt(d, 10));
-
-      temperatureToHumidity.push({
-        destinationRangeStart,
-        sourceRangeStart,
-        rangeLength,
-      });
-
-      return;
-    }
-
-    if (line.startsWith('humidity-to-location map:')) {
-      mapType = 'humidity-to-location';
-      return;
-    }
-
-    if (mapType === 'humidity-to-location') {
-      const [destinationRangeStart, sourceRangeStart, rangeLength] = line
-        .split(' ')
-        .filter(Boolean)
-        .map((d) => parseInt(d, 10));
-
-      humidityToLocation.push({
-        destinationRangeStart,
-        sourceRangeStart,
-        rangeLength,
-      });
-
-      return;
-    }
-  });
+    maps.at(-1)?.push({
+      destinationStart: destinationRangeStart,
+      sourceStart: sourceRangeStart,
+      length: rangeLength,
+    });
+  }
 
   let minLocationNumber = Number.MAX_SAFE_INTEGER;
   for (const seed of seeds) {
-    const soilData = seedToSoil.find(
-      (x) => seed >= x.sourceRangeStart && seed <= x.sourceRangeStart + x.rangeLength
-    );
-    const soil = soilData
-      ? soilData.destinationRangeStart + (seed - soilData.sourceRangeStart)
-      : seed;
+    let mappedVal = seed;
+    for (const map of maps) {
+      const data = map.find(
+        (x) => mappedVal >= x.sourceStart && mappedVal <= x.sourceStart + x.length
+      );
 
-    const fertilizerData = soilToFertilizer.find(
-      (x) => soil >= x.sourceRangeStart && soil <= x.sourceRangeStart + x.rangeLength
-    );
-    const fertilizer = fertilizerData
-      ? fertilizerData.destinationRangeStart + (soil - fertilizerData.sourceRangeStart)
-      : soil;
+      mappedVal = data ? data.destinationStart + (mappedVal - data.sourceStart) : mappedVal;
+    }
 
-    const waterData = fertilizerToWater.find(
-      (x) => fertilizer >= x.sourceRangeStart && fertilizer <= x.sourceRangeStart + x.rangeLength
-    );
-    const water = waterData
-      ? waterData.destinationRangeStart + (fertilizer - waterData.sourceRangeStart)
-      : fertilizer;
-
-    const lightData = waterToLight.find(
-      (x) => water >= x.sourceRangeStart && water <= x.sourceRangeStart + x.rangeLength
-    );
-    const light = lightData
-      ? lightData.destinationRangeStart + (water - lightData.sourceRangeStart)
-      : water;
-
-    const temperatureData = lightToTemperature.find(
-      (x) => light >= x.sourceRangeStart && light <= x.sourceRangeStart + x.rangeLength
-    );
-    const temperature = temperatureData
-      ? temperatureData.destinationRangeStart + (light - temperatureData.sourceRangeStart)
-      : light;
-
-    const humidityData = temperatureToHumidity.find(
-      (x) => temperature >= x.sourceRangeStart && temperature <= x.sourceRangeStart + x.rangeLength
-    );
-    const humidity = humidityData
-      ? humidityData.destinationRangeStart + (temperature - humidityData.sourceRangeStart)
-      : temperature;
-
-    const locationData = humidityToLocation.find(
-      (x) => humidity >= x.sourceRangeStart && humidity <= x.sourceRangeStart + x.rangeLength
-    );
-    const location = locationData
-      ? locationData.destinationRangeStart + (humidity - locationData.sourceRangeStart)
-      : humidity;
-
-    minLocationNumber = Math.min(minLocationNumber, location);
+    minLocationNumber = Math.min(minLocationNumber, mappedVal);
   }
 
   return minLocationNumber.toString();
