@@ -42,5 +42,12 @@ export const getPartOneSolution = (input: string): string => {
 export const getPartTwoSolution = (input: string): string => {
   const lines = input.split('\n');
 
-  return lines.join();
+  const time = parseInt(lines[0].split(':')[1].trim().replaceAll(' ', ''));
+  const currentDistanceRecord = parseInt(lines[1].split(':')[1].trim().replaceAll(' ', ''));
+
+  const winners = Array.from({ length: time }, (_, i) => i).filter(
+    (s) => (time - s) * s > currentDistanceRecord
+  );
+
+  return winners.length.toString();
 };
