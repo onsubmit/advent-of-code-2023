@@ -23,7 +23,7 @@ export const getPartOneSolution = (input: string): string => {
   for (const line of lines) {
     if (!line.trim()) {
       maps.push([]);
-      break;
+      continue;
     }
 
     if (line.startsWith('seeds:')) {
@@ -33,11 +33,11 @@ export const getPartOneSolution = (input: string): string => {
         .split(' ')
         .filter(Boolean)
         .map((d) => parseInt(d, 10));
-      break;
+      continue;
     }
 
     if (mapTypes.some((mapType) => line.startsWith(mapType))) {
-      break;
+      continue;
     }
 
     const [destinationRangeStart, sourceRangeStart, rangeLength] = line
