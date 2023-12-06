@@ -22,19 +22,17 @@ export const getPartOneSolution = (input: string): string => {
     .filter(Boolean)
     .map((d) => parseInt(d, 10));
 
-  const races: Race[] = times.map((_, i) => ({
+  const races = times.map<Race>((_, i) => ({
     time: times[i],
     currentDistanceRecord: distances[i],
   }));
 
-  const numWaysToWin: number[] = [];
-
-  for (const race of races) {
+  const numWaysToWin = races.map((race) => {
     const winners = Array.from({ length: race.time }, (_, i) => i).filter(
-      (s) => (race.time - s) * s > race.currentDistanceRecord
+      (speed) => (race.time - speed) * speed > race.currentDistanceRecord
     );
-    numWaysToWin.push(winners.length);
-  }
+    return winners.length;
+  });
 
   return multiplyArray(numWaysToWin).toString();
 };
@@ -46,7 +44,7 @@ export const getPartTwoSolution = (input: string): string => {
   const currentDistanceRecord = parseInt(lines[1].split(':')[1].trim().replaceAll(' ', ''));
 
   const winners = Array.from({ length: time }, (_, i) => i).filter(
-    (s) => (time - s) * s > currentDistanceRecord
+    (speed) => (time - speed) * speed > currentDistanceRecord
   );
 
   return winners.length.toString();
