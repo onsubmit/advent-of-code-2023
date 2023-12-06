@@ -1,4 +1,4 @@
-import { sumArray } from '../sumArray';
+import { sumArray } from '../arrayMethods';
 
 const numberStrings = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
 

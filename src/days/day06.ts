@@ -1,4 +1,4 @@
-import { multiplyArray } from '../sumArray';
+import { multiplyArray } from '../arrayMethods';
 
 type Race = {
   time: number;
