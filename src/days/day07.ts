@@ -56,6 +56,7 @@ const getHandType = (cards: string[]): HandType => {
     }
   }
 
+  const jokerCount = cardRankMap.get('J') === 1 ? cardCounts.get('J') ?? 0 : 0;
   if (cardCounts.size === 1) {
     return '5-of-a-kind';
   }
@@ -63,20 +64,61 @@ const getHandType = (cards: string[]): HandType => {
   const counts = [...cardCounts].map((x) => x[1]);
   if (cardCounts.size === 2) {
     if (counts.includes(4)) {
+      if (jokerCount > 0) {
+        return '5-of-a-kind';
+      }
       return '4-of-a-kind';
     } else {
+      if (jokerCount === 2 || jokerCount === 3) {
+        return '5-of-a-kind';
+      }
+
+      if (jokerCount === 1) {
+        return '4-of-a-kind';
+      }
       return 'full-house';
     }
   }
 
   if (cardCounts.size === 3) {
     if (counts.includes(3)) {
+      if (jokerCount === 3) {
+        return '4-of-a-kind';
+      }
+
+      if (jokerCount === 2) {
+        return '5-of-a-kind';
+      }
+
+      if (jokerCount === 1) {
+        return '4-of-a-kind';
+      }
       return '3-of-a-kind';
     }
+    if (jokerCount === 2) {
+      return '4-of-a-kind';
+    }
+
+    if (jokerCount === 1) {
+      return 'full-house';
+    }
+
     return 'two-pair';
   }
 
   if (cardCounts.size === 4) {
+    if (jokerCount === 2) {
+      return '3-of-a-kind';
+    }
+
+    if (jokerCount === 1) {
+      return '3-of-a-kind';
+    }
+
+    return 'one-pair';
+  }
+
+  if (jokerCount === 1) {
     return 'one-pair';
   }
 
@@ -120,7 +162,20 @@ export const getPartOneSolution = (input: string): string => {
 };
 
 export const getPartTwoSolution = (input: string): string => {
-  const lines = input.split('\n');
+  cardRankMap.set('J', 1);
+  const lines = input.split('\n').filter(Boolean);
 
-  return lines.toString();
+  const games = lines.map<Game>((line) => {
+    const cards = [...line.split(' ')[0]];
+    const type = getHandType(cards);
+    const bid = parseInt(line.split(' ')[1], 10);
+    return { hand: { cards, type }, bid };
+  });
+
+  const sortedGames = games.sort(sortGames);
+  const winnings = sortedGames.map((g, i) => {
+    return g.bid * (i + 1);
+  });
+
+  return sumArray(winnings).toString();
 };
