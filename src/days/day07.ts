@@ -1,4 +1,4 @@
-import { sumArray } from '../sumArray';
+import { sumArray } from '../arrayMethods';
 
 type HandType =
   | '5-of-a-kind'
