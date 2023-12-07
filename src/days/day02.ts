@@ -1,4 +1,4 @@
-import { sumArray } from '../sumArray';
+import { sumArray } from '../arrayMethods';
 
 export const getPartOneSolution = (input: string): string => {
   const lines = input.split('\n').filter(Boolean);
