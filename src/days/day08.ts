@@ -23,13 +23,13 @@ const getElementsMap = (lines: string[]): Map<string, Elements> => {
 export const getPartOneSolution = (input: string): string => {
   const lines = input.split('\n').filter(Boolean);
 
-  const instructions = [...lines[0]];
+  const directions = [...lines[0]];
   const elementsMap = getElementsMap(lines);
 
   let step = 0;
   let current = 'AAA';
   while (current !== 'ZZZ') {
-    const direction = instructions[step++ % instructions.length];
+    const direction = directions[step++ % directions.length];
     const { left, right } = elementsMap.get(current)!;
     current = direction === 'R' ? right : left;
   }
@@ -40,7 +40,7 @@ export const getPartOneSolution = (input: string): string => {
 export const getPartTwoSolution = (input: string): string => {
   const lines = input.split('\n').filter(Boolean);
 
-  const instructions = [...lines[0]];
+  const directions = [...lines[0]];
   const elementsMap = getElementsMap(lines);
 
   const startingPoints = [...elementsMap.keys()].filter((k) => k.endsWith('A'));
@@ -51,7 +51,7 @@ export const getPartTwoSolution = (input: string): string => {
   for (const startingPoint of startingPoints) {
     let path = startingPoint;
     while (!path.endsWith('Z')) {
-      const direction = instructions[step++ % instructions.length];
+      const direction = directions[step++ % directions.length];
       const { left, right } = elementsMap.get(path)!;
       path = direction === 'R' ? right : left;
       paths.get(startingPoint)?.push(path);
