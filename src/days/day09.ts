@@ -54,11 +54,11 @@ export const getPartTwoSolution = (input: string): string => {
   for (const valueHistory of valueHistories) {
     const differences = getDifferences(valueHistory);
 
-    // Last row has all 0s, insert  another.
+    // Last row has all 0s, insert another.
     differences.at(-1)?.unshift(0);
 
     // Value to insert to the remaining rows is the difference between the
-    // last items from its row and the one below it.
+    // first items from its row and the one below it.
     for (let i = 2; i <= differences.length; i++) {
       const startThisRow = differences.at(0 - i)!.at(0)!;
       const startBelowRow = differences.at(1 - i)!.at(0)!;
