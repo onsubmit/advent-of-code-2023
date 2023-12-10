@@ -52,10 +52,10 @@ const IS_INSIDE_LOOP = -1;
 const getTilesAndStartLocation = (input: string): { tiles: Tile[][]; start: Coordinate } => {
   const lines = input.split('\n').filter(Boolean);
 
-  let start: { row: number; column: number } | undefined = undefined;
+  let start: Coordinate | undefined = undefined;
   const tiles: Tile[][] = lines.map((line, row) => {
-    const lineArr = [...line];
-    const tileArr = lineArr.map((c) => ({ value: c }) as Tile);
+    const lineArr = [...line] as TileValue[];
+    const tileArr = lineArr.map<Tile>((c) => ({ value: c, isPartOfPipeLoop: undefined }));
 
     if (!start) {
       const indexOfS = lineArr.indexOf('S');
