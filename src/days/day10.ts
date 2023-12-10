@@ -1,5 +1,3 @@
-import classifyPoint from 'robust-point-in-polygon';
-
 type Coordinate = { row: number; column: number };
 
 type TileValue = '|' | '-' | 'L' | 'J' | '7' | 'F' | '.' | 'S';
@@ -46,8 +44,6 @@ const pipeConnections: Record<TileValue, Array<Coordinate>> = {
     { row: 0, column: 1 },
   ],
 };
-
-const IS_INSIDE_LOOP = -1;
 
 const getTilesAndStartLocation = (input: string): { tiles: Tile[][]; start: Coordinate } => {
   const lines = input.split('\n').filter(Boolean);
@@ -118,14 +114,24 @@ export const getPartTwoSolution = (input: string): string => {
   const loop: Coordinate[] = getLoop(start, tiles);
 
   let numEnclosed = 0;
-  const loopVertices: Array<[number, number]> = loop.map((c) => [c.column, c.row]);
+  //const loopVertices: Array<[number, number]> = loop.map((c) => [c.column, c.row]);
   for (let r = 0; r < tiles.length; r++) {
     for (let c = 0; c < tiles[r].length; c++) {
       if (tiles[r][c].isPartOfPipeLoop) {
         continue;
       }
 
-      if (classifyPoint(loopVertices, [c, r]) === IS_INSIDE_LOOP) {
+      let intersections = 0;
+      for (let c2 = 0; c2 < c; c2++) {
+        if (
+          ['|', 'L', 'J'].includes(tiles[r][c2].value) &&
+          loop.find((l) => areCoordinatesEqual(l, { row: r, column: c2 }))
+        ) {
+          intersections++;
+        }
+      }
+
+      if (intersections % 2 === 1) {
         numEnclosed++;
       }
     }

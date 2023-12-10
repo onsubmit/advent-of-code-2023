@@ -17,14 +17,12 @@
     "@mui/material": "^5.14.19",
     "classnames": "^2.3.2",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "robust-point-in-polygon": "^1.0.3"
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "@total-typescript/ts-reset": "^0.5.1",
     "@types/react": "^18.2.37",
     "@types/react-dom": "^18.2.15",
-    "@types/robust-point-in-polygon": "^1.0.4",
     "@typescript-eslint/eslint-plugin": "^6.10.0",
     "@typescript-eslint/parser": "^6.10.0",
     "@vitejs/plugin-react-swc": "^3.5.0",
