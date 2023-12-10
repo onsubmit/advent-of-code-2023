@@ -9,6 +9,10 @@ type Tile = {
   isPartOfPipeLoop: boolean | undefined;
 };
 
+const areCoordinatesEqual = (a: Coordinate, b: Coordinate) => {
+  return a.row === b.row && a.column === b.column;
+};
+
 const pipeConnections: Record<TileValue, Array<Coordinate>> = {
   '|': [
     { row: -1, column: 0 },
@@ -79,11 +83,6 @@ const getLoop = (start: Coordinate, tiles: Tile[][]): Coordinate[] => {
     const { row, column } = current;
     const currentTile = tiles[row][column];
 
-    if (currentTile.value === '.') {
-      // Ignore the ground.
-      continue;
-    }
-
     if (currentTile.value === 'S' && loop.length > 1) {
       // We've closed the loop.
       iterate = false;
@@ -96,8 +95,7 @@ const getLoop = (start: Coordinate, tiles: Tile[][]): Coordinate[] => {
     }));
 
     // Probably a better way to keep traversing the loop in the same direction, but 🤷‍♂️.
-    const tileToAdd =
-      previous.row === option1.row && previous.column === option1.column ? option2 : option1;
+    const tileToAdd = areCoordinatesEqual(previous, option1) ? option2 : option1;
     loop.push(tileToAdd);
     tiles[tileToAdd.row][tileToAdd.column].isPartOfPipeLoop = true;
 
