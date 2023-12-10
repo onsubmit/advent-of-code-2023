@@ -2,243 +2,136 @@ import classifyPoint from 'robust-point-in-polygon';
 
 type Coordinate = { row: number; column: number };
 
-export const getPartOneSolution = (input: string): string => {
+type TileValue = '|' | '-' | 'L' | 'J' | '7' | 'F' | '.' | 'S';
+
+type Tile = {
+  value: TileValue;
+  isPartOfPipeLoop: boolean | undefined;
+};
+
+const pipeConnections: Record<TileValue, Array<Coordinate>> = {
+  '|': [
+    { row: -1, column: 0 },
+    { row: 1, column: 0 },
+  ],
+  '-': [
+    { row: 0, column: -1 },
+    { row: 0, column: 1 },
+  ],
+  L: [
+    { row: -1, column: 0 },
+    { row: 0, column: 1 },
+  ],
+  J: [
+    { row: -1, column: 0 },
+    { row: 0, column: -1 },
+  ],
+  '7': [
+    { row: 0, column: -1 },
+    { row: 1, column: 0 },
+  ],
+  F: [
+    { row: 0, column: 1 },
+    { row: 1, column: 0 },
+  ],
+  '.': [],
+  S: [
+    // By inspection, 'S' would be a '-' with my input.
+    // This solution might not work for other input.
+    { row: 0, column: -1 },
+    { row: 0, column: 1 },
+  ],
+};
+
+const IS_INSIDE_LOOP = -1;
+
+const getTilesAndStartLocation = (input: string): { tiles: Tile[][]; start: Coordinate } => {
   const lines = input.split('\n').filter(Boolean);
 
-  const start: { row: number; column: number } = { row: 0, column: 0 };
-  const tiles: string[][] = lines.map((line, row) => {
+  let start: { row: number; column: number } | undefined = undefined;
+  const tiles: Tile[][] = lines.map((line, row) => {
     const lineArr = [...line];
-    const indexOfS = lineArr.indexOf('S');
-    if (indexOfS >= 0) {
-      start.row = row;
-      start.column = indexOfS;
+    const tileArr = lineArr.map((c) => ({ value: c }) as Tile);
+
+    if (!start) {
+      const indexOfS = lineArr.indexOf('S');
+      if (indexOfS >= 0) {
+        start = { row, column: indexOfS };
+      }
     }
-    return lineArr;
+    return tileArr;
   });
 
+  if (!start) {
+    throw new Error('Start coordinate not found.');
+  }
+
+  return { tiles, start };
+};
+
+const getLoop = (start: Coordinate, tiles: Tile[][]): Coordinate[] => {
   let previous = start;
   let current = start;
+  let iterate = true;
+
   const loop: Coordinate[] = [start];
-  let go = true;
-  while (go) {
+  while (iterate) {
     const { row, column } = current;
     const currentTile = tiles[row][column];
 
-    switch (currentTile) {
-      case '|': {
-        const option1 = { row: row - 1, column };
-        const option2 = { row: row + 1, column };
-
-        loop.push(
-          previous.row === option1.row && previous.column === option1.column ? option2 : option1
-        );
-        break;
-      }
-      case '-': {
-        const option1 = { row: row, column: column - 1 };
-        const option2 = { row: row, column: column + 1 };
-
-        loop.push(
-          previous.row === option1.row && previous.column === option1.column ? option2 : option1
-        );
-        break;
-      }
-      case 'L': {
-        const option1 = { row: row - 1, column };
-        const option2 = { row: row, column: column + 1 };
-
-        loop.push(
-          previous.row === option1.row && previous.column === option1.column ? option2 : option1
-        );
-        break;
-      }
-      case 'J': {
-        const option1 = { row: row - 1, column };
-        const option2 = { row: row, column: column - 1 };
-
-        loop.push(
-          previous.row === option1.row && previous.column === option1.column ? option2 : option1
-        );
-        break;
-      }
-      case '7': {
-        const option1 = { row: row, column: column - 1 };
-        const option2 = { row: row + 1, column };
-
-        loop.push(
-          previous.row === option1.row && previous.column === option1.column ? option2 : option1
-        );
-        break;
-      }
-      case 'F': {
-        const option1 = { row: row, column: column + 1 };
-        const option2 = { row: row + 1, column };
-
-        loop.push(
-          previous.row === option1.row && previous.column === option1.column ? option2 : option1
-        );
-        break;
-      }
-      case 'S': {
-        if (loop.length > 1) {
-          go = false;
-          break;
-        }
-
-        // const option1 = { row: row, column: column + 1 };
-        // const option2 = { row: row + 1, column };
-
-        // loop.push(
-        //   previous.row === option1.row && previous.column === option1.column ? option2 : option1
-        // );
-        // break;
-
-        // S is a dash in my input
-        const option1 = { row: row, column: column - 1 };
-        const option2 = { row: row, column: column + 1 };
-
-        loop.push(
-          previous.row === option1.row && previous.column === option1.column ? option2 : option1
-        );
-        break;
-      }
+    if (currentTile.value === '.') {
+      // Ignore the ground.
+      continue;
     }
+
+    if (currentTile.value === 'S' && loop.length > 1) {
+      // We've closed the loop.
+      iterate = false;
+      continue;
+    }
+
+    const [option1, option2] = pipeConnections[currentTile.value].map((connection) => ({
+      row: row + connection.row,
+      column: column + connection.column,
+    }));
+
+    // Probably a better way to keep traversing the loop in the same direction, but 🤷‍♂️.
+    const tileToAdd =
+      previous.row === option1.row && previous.column === option1.column ? option2 : option1;
+    loop.push(tileToAdd);
+    tiles[tileToAdd.row][tileToAdd.column].isPartOfPipeLoop = true;
 
     previous = current;
     current = loop.at(-1)!;
   }
 
-  return ((loop.length - 1) / 2).toString();
+  return loop;
+};
+
+export const getPartOneSolution = (input: string): string => {
+  const { tiles, start } = getTilesAndStartLocation(input);
+  const loop: Coordinate[] = getLoop(start, tiles);
+
+  return Math.floor(loop.length / 2).toString();
 };
 
 export const getPartTwoSolution = (input: string): string => {
-  const lines = input.split('\n').filter(Boolean);
+  const { tiles, start } = getTilesAndStartLocation(input);
+  const loop: Coordinate[] = getLoop(start, tiles);
 
-  const start: { row: number; column: number } = { row: 0, column: 0 };
-  const tiles: string[][] = lines.map((line, row) => {
-    const lineArr = [...line];
-    const indexOfS = lineArr.indexOf('S');
-    if (indexOfS >= 0) {
-      start.row = row;
-      start.column = indexOfS;
-    }
-    return lineArr;
-  });
-
-  let previous = start;
-  let current = start;
-  const loop: Coordinate[] = [start];
-  let go = true;
-  while (go) {
-    const { row, column } = current;
-    const currentTile = tiles[row][column];
-
-    switch (currentTile) {
-      case '|': {
-        const option1 = { row: row - 1, column };
-        const option2 = { row: row + 1, column };
-
-        loop.push(
-          previous.row === option1.row && previous.column === option1.column ? option2 : option1
-        );
-        break;
-      }
-      case '-': {
-        const option1 = { row: row, column: column - 1 };
-        const option2 = { row: row, column: column + 1 };
-
-        loop.push(
-          previous.row === option1.row && previous.column === option1.column ? option2 : option1
-        );
-        break;
-      }
-      case 'L': {
-        const option1 = { row: row - 1, column };
-        const option2 = { row: row, column: column + 1 };
-
-        loop.push(
-          previous.row === option1.row && previous.column === option1.column ? option2 : option1
-        );
-        break;
-      }
-      case 'J': {
-        const option1 = { row: row - 1, column };
-        const option2 = { row: row, column: column - 1 };
-
-        loop.push(
-          previous.row === option1.row && previous.column === option1.column ? option2 : option1
-        );
-        break;
-      }
-      case '7': {
-        const option1 = { row: row, column: column - 1 };
-        const option2 = { row: row + 1, column };
-
-        loop.push(
-          previous.row === option1.row && previous.column === option1.column ? option2 : option1
-        );
-        break;
-      }
-      case 'F': {
-        const option1 = { row: row, column: column + 1 };
-        const option2 = { row: row + 1, column };
-
-        loop.push(
-          previous.row === option1.row && previous.column === option1.column ? option2 : option1
-        );
-        break;
-      }
-      case 'S': {
-        if (loop.length > 1) {
-          go = false;
-          break;
-        }
-
-        // S is an F in the sample input
-        // const option1 = { row: row, column: column + 1 };
-        // const option2 = { row: row + 1, column };
-
-        // loop.push(
-        //   previous.row === option1.row && previous.column === option1.column ? option2 : option1
-        // );
-        // break;
-
-        // S is a dash in my input
-        const option1 = { row: row, column: column - 1 };
-        const option2 = { row: row, column: column + 1 };
-
-        loop.push(
-          previous.row === option1.row && previous.column === option1.column ? option2 : option1
-        );
-        break;
-      }
-    }
-
-    previous = current;
-    current = loop.at(-1)!;
-  }
-
-  const enclosed: Coordinate[] = [];
   let numEnclosed = 0;
+  const loopVertices: Array<[number, number]> = loop.map((c) => [c.column, c.row]);
   for (let r = 0; r < tiles.length; r++) {
     for (let c = 0; c < tiles[r].length; c++) {
-      if (loop.find((l) => l.row === r && l.column === c)) {
+      if (tiles[r][c].isPartOfPipeLoop) {
         continue;
       }
 
-      const inside =
-        classifyPoint(
-          loop.map((c) => [c.column, c.row]),
-          [c, r]
-        ) === -1;
-
-      if (inside) {
-        enclosed.push({ row: r, column: c });
+      if (classifyPoint(loopVertices, [c, r]) === IS_INSIDE_LOOP) {
         numEnclosed++;
       }
     }
   }
 
-  console.log(enclosed);
   return numEnclosed.toString();
 };
