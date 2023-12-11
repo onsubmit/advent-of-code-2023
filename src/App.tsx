@@ -50,6 +50,7 @@ export default function App() {
   const [value, setValue] = useState(0);
 
   const DayComponents = [
+    lazy(() => import('./components/day11')),
     lazy(() => import('./components/day10')),
     lazy(() => import('./components/day09')),
     lazy(() => import('./components/day08')),
