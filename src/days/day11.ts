@@ -75,8 +75,8 @@ const getPathLengthsBetweenStars = (
 
       const length =
         (multiplier - 1) * (numEmptyRowsBetweenStars + numEmptyColsBetweenStars) +
-        Math.abs(starCoordinates[i].row - starCoordinates[j].row) +
-        Math.abs(starCoordinates[i].column - starCoordinates[j].column);
+        (maxRow - minRow) +
+        (maxCol - minCol);
 
       knownPathLengths.get(i)?.set(j, true);
       pathLengths.push(length);
