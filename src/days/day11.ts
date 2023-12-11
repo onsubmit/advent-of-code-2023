@@ -14,20 +14,18 @@ const getStarCoordinates = (universe: string[][]): Coordinate[] => {
   return coordinates;
 };
 
-const getShortestPathLengthsOfStarPairs = (
-  universe: string[][],
-  starCoordinates: Coordinate[],
-  multiplier: number
-): number[] => {
+const getEmptyRows = (universe: string[][]): number[] => {
   const emptyRows: number[] = [];
-  const emptyCols: number[] = [];
-
   for (let r = 0; r < universe.length; r++) {
     if (universe[r].every((x) => x === '.')) {
       emptyRows.push(r);
     }
   }
+  return emptyRows;
+};
 
+const getEmptyColumns = (universe: string[][]): number[] => {
+  const emptyColumns: number[] = [];
   for (let c = 0; c < universe[0].length; c++) {
     let isColumnEmpty = true;
     for (let r = 0; isColumnEmpty && r < universe.length; r++) {
@@ -37,24 +35,35 @@ const getShortestPathLengthsOfStarPairs = (
     }
 
     if (isColumnEmpty) {
-      emptyCols.push(c);
+      emptyColumns.push(c);
     }
   }
 
+  return emptyColumns;
+};
+
+const getPathLengthsBetweenStars = (
+  universe: string[][],
+  starCoordinates: Coordinate[],
+  multiplier: number
+): number[] => {
+  const emptyRows = getEmptyRows(universe);
+  const emptyColumns = getEmptyColumns(universe);
+
   const pathLengths: number[] = [];
-  const known = new Map<number, Map<number, number>>();
+  const knownPathLengths = new Map<number, Map<number, boolean>>();
   for (let i = 0; i < starCoordinates.length; i++) {
     for (let j = 0; j < starCoordinates.length; j++) {
       if (i === j) {
         continue;
       }
 
-      if (known.get(i)?.get(j) !== undefined || known.get(j)?.get(i) !== undefined) {
+      if (knownPathLengths.get(i)?.get(j) || knownPathLengths.get(j)?.get(i)) {
         continue;
       }
 
-      if (!known.get(i)) {
-        known.set(i, new Map());
+      if (!knownPathLengths.get(i)) {
+        knownPathLengths.set(i, new Map());
       }
 
       const minRow = Math.min(starCoordinates[i].row, starCoordinates[j].row);
@@ -62,15 +71,15 @@ const getShortestPathLengthsOfStarPairs = (
       const maxRow = Math.max(starCoordinates[i].row, starCoordinates[j].row);
       const maxCol = Math.max(starCoordinates[i].column, starCoordinates[j].column);
       const numEmptyRowsBetweenStars = emptyRows.filter((n) => n > minRow && n < maxRow).length;
-      const numEmptyColsBetweenStars = emptyCols.filter((n) => n > minCol && n < maxCol).length;
+      const numEmptyColsBetweenStars = emptyColumns.filter((n) => n > minCol && n < maxCol).length;
 
-      const distance =
+      const length =
         (multiplier - 1) * (numEmptyRowsBetweenStars + numEmptyColsBetweenStars) +
         Math.abs(starCoordinates[i].row - starCoordinates[j].row) +
         Math.abs(starCoordinates[i].column - starCoordinates[j].column);
 
-      known.get(i)?.set(j, distance);
-      pathLengths.push(distance);
+      knownPathLengths.get(i)?.set(j, true);
+      pathLengths.push(length);
     }
   }
 
@@ -82,7 +91,7 @@ const getSolution = (input: string, multiplier: number) => {
 
   const universe: string[][] = lines.map((line) => [...line]);
   const starCoordinates: Coordinate[] = getStarCoordinates(universe);
-  const shortestPathLengthsOfStarPairs = getShortestPathLengthsOfStarPairs(
+  const shortestPathLengthsOfStarPairs = getPathLengthsBetweenStars(
     universe,
     starCoordinates,
     multiplier
