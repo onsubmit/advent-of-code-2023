@@ -89,8 +89,8 @@ const getPathLengthsBetweenStars = (
 const getSolution = (input: string, multiplier: number) => {
   const lines = input.split('\n').filter(Boolean);
 
-  const universe: string[][] = lines.map((line) => [...line]);
-  const starCoordinates: Coordinate[] = getStarCoordinates(universe);
+  const universe = lines.map((line) => [...line]);
+  const starCoordinates = getStarCoordinates(universe);
   const shortestPathLengthsOfStarPairs = getPathLengthsBetweenStars(
     universe,
     starCoordinates,
