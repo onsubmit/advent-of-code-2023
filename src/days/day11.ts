@@ -91,13 +91,9 @@ const getSolution = (input: string, multiplier: number) => {
 
   const universe = lines.map((line) => [...line]);
   const starCoordinates = getStarCoordinates(universe);
-  const shortestPathLengthsOfStarPairs = getPathLengthsBetweenStars(
-    universe,
-    starCoordinates,
-    multiplier
-  );
+  const pathLengthsBetweenStars = getPathLengthsBetweenStars(universe, starCoordinates, multiplier);
 
-  return sumArray(shortestPathLengthsOfStarPairs).toString();
+  return sumArray(pathLengthsBetweenStars).toString();
 };
 
 export const getPartOneSolution = (input: string): string => {
