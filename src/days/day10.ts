@@ -1,4 +1,4 @@
-type Coordinate = { row: number; column: number };
+import { Coordinate } from '../coordinate';
 
 type TileValue = '|' | '-' | 'L' | 'J' | '7' | 'F' | '.' | 'S';
 

@@ -1,6 +1,5 @@
 import { sumArray } from '../arrayMethods';
-
-type Coordinate = { row: number; column: number };
+import { Coordinate } from '../coordinate';
 
 const getStarCoordinates = (universe: string[][]): Coordinate[] => {
   const coordinates: Coordinate[] = [];
