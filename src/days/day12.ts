@@ -3,14 +3,9 @@ import Iter from 'es-iter';
 import { sumArray } from '../arrayMethods';
 
 type SpringStatus = '.' | '#' | '?';
-type DamagedGroup = {
-  size: number;
-  numUnknown: number;
-};
 
 type Record = {
   springs: SpringStatus[];
-  springGroups: DamagedGroup[];
   damagedSpringGroupsLengths: number[];
 };
 
@@ -20,17 +15,9 @@ export const getPartOneSolution = (input: string): string => {
   const records = lines.map<Record>((line) => {
     const split = line.split(' ');
     const springs = [...split[0]] as SpringStatus[];
-    const springGroups = split[0]
-      .split('.')
-      .filter(Boolean)
-      .map<DamagedGroup>((g) => ({
-        size: g.length,
-        numUnknown: [...g].filter((c) => c === '?').length,
-      }));
     const damagedSpringGroupsLengths = split[1].split(',').map((d) => parseInt(d, 10));
     return {
       springs,
-      springGroups,
       damagedSpringGroupsLengths,
     };
   });
