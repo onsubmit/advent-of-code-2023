@@ -21,7 +21,7 @@ function DayPanel(props: DayPanelProps) {
       aria-labelledby={`day${day}-tab`}
       {...other}
     >
-      {selectedIndex === index && <Box sx={{ p: 3 }}>{children}</Box>}
+      {selectedIndex === index && <Box sx={{ padding: '2rem' }}>{children}</Box>}
     </div>
   );
 }
@@ -65,25 +65,43 @@ export default function App() {
   ];
 
   return (
-    <Box sx={{ width: '100%' }}>
-      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-        <Tabs value={value} onChange={(_, value) => setValue(value)} aria-label="Day tabs">
+    <Box
+      sx={{
+        display: 'inline-flex',
+        flexDirection: 'row',
+        borderBottom: 1,
+        borderRight: 1,
+        borderBottomRightRadius: 8,
+        borderColor: 'divider',
+      }}
+    >
+      <Box sx={{ borderRight: 1, borderColor: 'divider' }}>
+        <Tabs
+          value={value}
+          variant="scrollable"
+          scrollButtons="auto"
+          orientation="vertical"
+          onChange={(_, value) => setValue(value)}
+          aria-label="Day tabs"
+        >
           {DayComponents.map((_day, i) => {
             const dayNumber = DayComponents.length - i;
             return <Tab key={`day${dayNumber}`} {...getTabProps(dayNumber)} />;
           })}
         </Tabs>
       </Box>
-      {DayComponents.map((Day, i) => {
-        const dayNumber = DayComponents.length - i;
-        return (
-          <DayPanel key={`day${dayNumber}-panel`} {...getDayPanelProps(value, i, dayNumber)}>
-            <Suspense>
-              <Day />
-            </Suspense>
-          </DayPanel>
-        );
-      })}
+      <Box>
+        {DayComponents.map((Day, i) => {
+          const dayNumber = DayComponents.length - i;
+          return (
+            <DayPanel key={`day${dayNumber}-panel`} {...getDayPanelProps(value, i, dayNumber)}>
+              <Suspense>
+                <Day />
+              </Suspense>
+            </DayPanel>
+          );
+        })}
+      </Box>
     </Box>
   );
 }
