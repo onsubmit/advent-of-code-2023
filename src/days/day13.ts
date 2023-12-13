@@ -29,14 +29,12 @@ class Pattern {
     const { disallowed } = options;
 
     for (let c = 0; c < this._columns - 1; c++) {
-      if (this._doColumnsMatch(c, c + 1)) {
-        if (c === disallowed) {
-          continue;
-        }
+      if (c === disallowed) {
+        continue;
+      }
 
-        if (this._isVerticallyMirroredAt(c)) {
-          return c + 1;
-        }
+      if (this._doColumnsMatch(c, c + 1) && this._isVerticallyMirroredAt(c)) {
+        return c + 1;
       }
     }
 
@@ -49,14 +47,12 @@ class Pattern {
     const { disallowed } = options;
 
     for (let r = 0; r < this._rows - 1; r++) {
-      if (this._doRowsMatch(r, r + 1)) {
-        if (r === disallowed) {
-          continue;
-        }
+      if (r === disallowed) {
+        continue;
+      }
 
-        if (this._isHorizontallyMirroredAt(r)) {
-          return r + 1;
-        }
+      if (this._doRowsMatch(r, r + 1) && this._isHorizontallyMirroredAt(r)) {
+        return r + 1;
       }
     }
 
