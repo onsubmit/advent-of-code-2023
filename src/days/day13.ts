@@ -24,12 +24,12 @@ class Pattern {
   };
 
   getColsLeftOfVerticalLineOfReflection = (
-    options: { disallowed: number } = { disallowed: -1 }
+    options: { disallowedColumn: number } = { disallowedColumn: -1 }
   ) => {
-    const { disallowed } = options;
+    const { disallowedColumn } = options;
 
     for (let c = 0; c < this._columns - 1; c++) {
-      if (c === disallowed) {
+      if (c === disallowedColumn) {
         continue;
       }
 
@@ -42,12 +42,12 @@ class Pattern {
   };
 
   getRowsAboveHorizontalLineOfReflection = (
-    options: { disallowed: number } = { disallowed: -1 }
+    options: { disallowedRow: number } = { disallowedRow: -1 }
   ) => {
-    const { disallowed } = options;
+    const { disallowedRow } = options;
 
     for (let r = 0; r < this._rows - 1; r++) {
-      if (r === disallowed) {
+      if (r === disallowedRow) {
         continue;
       }
 
@@ -154,13 +154,19 @@ export const getPartTwoSolution = (input: string): string => {
         for (let c = 0; c < pattern.columns; c++) {
           const adjustedPattern = pattern.smudge(r, c);
 
-          const v2 = adjustedPattern.getColsLeftOfVerticalLineOfReflection({ disallowed: v1 - 1 });
+          const v2 = adjustedPattern.getColsLeftOfVerticalLineOfReflection({
+            disallowedColumn: v1 - 1,
+          });
+
           if (v2 && v1 !== v2) {
             totalColsLeftOfVerticalLineOfReflection += v2;
             return;
           }
 
-          const h2 = adjustedPattern.getRowsAboveHorizontalLineOfReflection({ disallowed: h1 - 1 });
+          const h2 = adjustedPattern.getRowsAboveHorizontalLineOfReflection({
+            disallowedRow: h1 - 1,
+          });
+
           if (h2 && h1 !== h2) {
             totalRowsAboveHorizontalLineOfReflection += h2;
             return;
