@@ -1,85 +1,88 @@
-import Iter from 'es-iter';
+import memoize from 'memoizee';
 
 import { sumArray } from '../arrayMethods';
 
-type SpringStatus = '.' | '#' | '?';
+const getNumArrangements = memoize(
+  (springs: string, damagedSpringGroupsLengths: number[]): number => {
+    if (springs.length === 0) {
+      // Only 0 damaged springs are allowed for 0 springs.
+      return damagedSpringGroupsLengths.length === 0 ? 1 : 0;
+    }
 
-type Record = {
-  springs: SpringStatus[];
-  damagedSpringGroupsLengths: number[];
+    if (damagedSpringGroupsLengths.length === 0) {
+      // No damaged springs allowed.
+      return springs.includes('#') ? 0 : 1;
+    }
+
+    if (
+      springs.length <
+      sumArray(damagedSpringGroupsLengths) + damagedSpringGroupsLengths.length - 1
+    ) {
+      // Not enough room for all groups of damaged springs and the operational springs between them.
+      return 0;
+    }
+
+    const firstSpring = springs[0];
+    switch (firstSpring) {
+      case '.': {
+        // First spring is operational, continue.
+        return getNumArrangements(springs.slice(1), damagedSpringGroupsLengths);
+      }
+      case '#': {
+        // First spring is damaged.
+        const [firstGroupLength, ...remainingGroupsLengths] = damagedSpringGroupsLengths;
+        for (let i = 1; i < firstGroupLength; i++) {
+          if (springs[i] === '.') {
+            // No operational springs are allowed, otherwise the damaged group size wouldn't be big enough.
+            return 0;
+          }
+        }
+
+        if (springs[firstGroupLength] === '#') {
+          // The spring immediately following a damaged group must be operational.
+          return 0;
+        }
+
+        // Damaged group is processed, continue to next group.
+        return getNumArrangements(springs.slice(firstGroupLength + 1), remainingGroupsLengths);
+      }
+      case '?': {
+        // First spring status is unknown. Try both options.
+        return sumArray(
+          ['#', '.'].map((s) =>
+            getNumArrangements(`${s}${springs.slice(1)}`, damagedSpringGroupsLengths)
+          )
+        );
+      }
+      default: {
+        throw new Error('Invalid spring type');
+      }
+    }
+  },
+  { primitive: true }
+);
+
+const getSolution = (input: string, repeat: number) => {
+  const lines = input.split('\n').filter(Boolean);
+
+  let sum = 0;
+  lines.forEach((line) => {
+    const split = line.split(' ');
+    const springs = [...Array.from({ length: repeat }, () => split[0]).join('?')].join('');
+    const damagedSpringGroupsLengths = [
+      ...Array.from({ length: repeat }, () => split[1].split(',').map((d) => parseInt(d, 10))),
+    ].flatMap((d) => d);
+
+    sum += getNumArrangements(springs, damagedSpringGroupsLengths);
+  });
+
+  return sum.toString();
 };
 
 export const getPartOneSolution = (input: string): string => {
-  const lines = input.split('\n').filter(Boolean);
-
-  const records = lines.map<Record>((line) => {
-    const split = line.split(' ');
-    const springs = [...split[0]] as SpringStatus[];
-    const damagedSpringGroupsLengths = split[1].split(',').map((d) => parseInt(d, 10));
-    return {
-      springs,
-      damagedSpringGroupsLengths,
-    };
-  });
-
-  const recordNumArrangements: number[] = [];
-
-  for (const record of records) {
-    const width = record.springs.length;
-    const totalOptions =
-      sumArray(record.damagedSpringGroupsLengths) + record.damagedSpringGroupsLengths.length - 1;
-    const extraSquares = width - totalOptions;
-    const range = Array.from(
-      { length: record.damagedSpringGroupsLengths.length + extraSquares },
-      (_, i) => i
-    );
-
-    const combinations: number[][] = [
-      ...new Iter(range).combinations(record.damagedSpringGroupsLengths.length),
-    ];
-
-    const rows = combinations
-      .map((combination) => {
-        const row: SpringStatus[] = [];
-        for (let i = 0; i < combination.length; i++) {
-          row.push(
-            ...Array.from(
-              { length: combination[i] - (combination[i - 1] ?? 0) },
-              () => '.' as SpringStatus
-            )
-          );
-          row.push(
-            ...Array.from(
-              { length: record.damagedSpringGroupsLengths[i] },
-              () => '#' as SpringStatus
-            )
-          );
-        }
-
-        row.push(...Array.from({ length: width - row.length }, () => '.' as SpringStatus));
-
-        for (let j = 0; j < width; j++) {
-          if (record.springs[j] === '?') {
-            continue;
-          }
-
-          if (row[j] !== record.springs[j]) {
-            return;
-          }
-        }
-
-        return row;
-      })
-      .filter(Boolean);
-
-    recordNumArrangements.push(rows.length);
-  }
-
-  return sumArray(recordNumArrangements).toString();
+  return getSolution(input, 1);
 };
 
 export const getPartTwoSolution = (input: string): string => {
-  const lines = input.split('\n').filter(Boolean);
-
-  return lines.toString();
+  return getSolution(input, 5);
 };
