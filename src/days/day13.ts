@@ -1,116 +1,141 @@
-const getVerticalLineOfReflection = (pattern: string[][], disallowed = -1) => {
-  const linesOfReflection: number[] = [];
+class Pattern {
+  private _values: ReadonlyArray<ReadonlyArray<string>>;
+  private readonly _rows: number;
+  private readonly _columns: number;
 
-  for (let c = 0; c < pattern[0].length - 1; c++) {
-    let match = true;
-    for (let r = 0; match && r < pattern.length; r++) {
-      if (pattern[r][c] !== pattern[r][c + 1]) {
-        match = false;
+  constructor(lines: string[][]) {
+    this._values = lines;
+    this._rows = lines.length;
+    this._columns = lines[0].length;
+  }
+
+  get rows(): number {
+    return this._rows;
+  }
+
+  get columns(): number {
+    return this._columns;
+  }
+
+  smudge = (row: number, column: number): Pattern => {
+    const adjustedValues = this._values.map((line) => [...line]);
+    adjustedValues[row][column] = adjustedValues[row][column] === '#' ? '.' : '#';
+    return new Pattern(adjustedValues);
+  };
+
+  getColsLeftOfVerticalLineOfReflection = (
+    options: { disallowed: number } = { disallowed: -1 }
+  ) => {
+    const { disallowed } = options;
+
+    for (let c = 0; c < this._columns - 1; c++) {
+      if (this._doColumnsMatch(c, c + 1)) {
+        if (c === disallowed) {
+          continue;
+        }
+
+        if (this._isVerticallyMirroredAt(c)) {
+          return c + 1;
+        }
       }
     }
 
-    if (match) {
-      linesOfReflection.push(c);
+    return 0;
+  };
+
+  getRowsAboveHorizontalLineOfReflection = (
+    options: { disallowed: number } = { disallowed: -1 }
+  ) => {
+    const { disallowed } = options;
+
+    for (let r = 0; r < this._rows - 1; r++) {
+      if (this._doRowsMatch(r, r + 1)) {
+        if (r === disallowed) {
+          continue;
+        }
+
+        if (this._isHorizontallyMirroredAt(r)) {
+          return r + 1;
+        }
+      }
+    }
+
+    return 0;
+  };
+
+  private _doColumnsMatch = (c1: number, c2: number): boolean => {
+    return this._values.every((row) => row[c1] === row[c2]);
+  };
+
+  private _doRowsMatch = (r1: number, r2: number): boolean => {
+    for (let c = 0; c < this._columns; c++) {
+      if (this._values[r1][c] !== this._values[r2][c]) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  private _isVerticallyMirroredAt = (column: number): boolean => {
+    for (let c = 1; c < this._columns; c++) {
+      for (let r = 0; r < this._rows; r++) {
+        if (column - c < 0 || c + column + 1 >= this._columns) {
+          // We've fallen off the edge.
+          // Every other column has a reflected column within the pattern and must match exactly.
+          return true;
+        }
+
+        if (this._values[r][column - c] !== this._values[r][c + column + 1]) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  };
+
+  private _isHorizontallyMirroredAt = (row: number): boolean => {
+    for (let r = 1; r <= this._rows; r++) {
+      for (let c = 0; c < this._columns; c++) {
+        if (row - r < 0 || row + r + 1 >= this._rows) {
+          // We've fallen off the edge.
+          // Every other row has a reflected row within the pattern and must match exactly.
+          return true;
+        }
+
+        if (this._values[row - r][c] !== this._values[row + r + 1][c]) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  };
+}
+
+const getPatterns = (input: string): Array<Pattern> => {
+  const patterns: Array<Array<Array<string>>> = [[]];
+  const lines = input.trim().split('\n');
+  for (const line of lines) {
+    if (line) {
+      patterns.at(-1)?.push([...line]);
+    } else {
+      patterns.push([]);
     }
   }
 
-  for (const possibility of linesOfReflection) {
-    const col = possibility;
-    if (col === disallowed) {
-      continue;
-    }
-    let isMirror = true;
-    const matchedCols: number[] = [col, col + 1];
-    for (let c = 1; c < pattern[0].length; c++) {
-      for (let r = 0; isMirror && r < pattern.length; r++) {
-        if (col - c < 0 || c + col + 1 >= pattern[0].length) {
-          return col + 1;
-        }
-
-        if (pattern[r][col - c] !== pattern[r][c + col + 1]) {
-          isMirror = false;
-        }
-      }
-
-      if (isMirror) {
-        matchedCols.push(col - c);
-        matchedCols.push(c + col + 1);
-      }
-    }
-
-    if (isMirror) {
-      return col + 1;
-    }
-  }
-
-  return 0;
-};
-
-const getHorizontalLineOfReflection = (pattern: string[][], disallowed = -1) => {
-  const linesOfReflection: number[] = [];
-  for (let r = 0; r < pattern.length - 1; r++) {
-    let match = true;
-    for (let c = 0; match && c < pattern[r].length; c++) {
-      if (pattern[r][c] !== pattern[r + 1][c]) {
-        match = false;
-      }
-    }
-
-    if (match) {
-      linesOfReflection.push(r);
-    }
-  }
-
-  for (const possibility of linesOfReflection) {
-    const row = possibility;
-    if (row === disallowed) {
-      continue;
-    }
-    let isMirror = true;
-    const matchedRows: number[] = [row, row + 1];
-    for (let r = 1; r <= pattern.length; r++) {
-      for (let c = 0; isMirror && c < pattern[0].length; c++) {
-        if (row - r < 0 || row + r + 1 >= pattern.length) {
-          return row + 1;
-        }
-
-        if (pattern[row - r][c] !== pattern[row + r + 1][c]) {
-          isMirror = false;
-        }
-      }
-
-      if (isMirror) {
-        matchedRows.push(row - r);
-        matchedRows.push(row + r + 1);
-      }
-    }
-
-    if (isMirror) {
-      return row + 1;
-    }
-  }
-
-  return 0;
+  return patterns.map((p) => new Pattern(p));
 };
 
 export const getPartOneSolution = (input: string): string => {
-  const patterns: Array<string[][]> = [[]];
-  const lines = input.trim().split('\n');
-
-  lines.forEach((line) => {
-    if (!line) {
-      patterns.push([]);
-      return;
-    }
-
-    patterns.at(-1)?.push([...line]);
-  });
+  const patterns = getPatterns(input);
 
   let totalColsLeftOfVerticalLineOfReflection = 0;
   let totalRowsAboveHorizontalLineOfReflection = 0;
   for (const pattern of patterns) {
-    totalColsLeftOfVerticalLineOfReflection += getVerticalLineOfReflection(pattern);
-    totalRowsAboveHorizontalLineOfReflection += getHorizontalLineOfReflection(pattern);
+    totalColsLeftOfVerticalLineOfReflection += pattern.getColsLeftOfVerticalLineOfReflection();
+    totalRowsAboveHorizontalLineOfReflection += pattern.getRowsAboveHorizontalLineOfReflection();
   }
 
   return (
@@ -120,42 +145,33 @@ export const getPartOneSolution = (input: string): string => {
 };
 
 export const getPartTwoSolution = (input: string): string => {
-  const patterns: Array<string[][]> = [[]];
-  const lines = input.trim().split('\n');
-
-  lines.forEach((line) => {
-    if (!line) {
-      patterns.push([]);
-      return;
-    }
-
-    patterns.at(-1)?.push([...line]);
-  });
+  const patterns = getPatterns(input);
 
   let totalColsLeftOfVerticalLineOfReflection = 0;
   let totalRowsAboveHorizontalLineOfReflection = 0;
   for (const pattern of patterns) {
-    const v1 = getVerticalLineOfReflection(pattern);
-    const h1 = getHorizontalLineOfReflection(pattern);
-    let found = false;
-    for (let r = 0; !found && r < pattern.length; r++) {
-      for (let c = 0; !found && c < pattern[r].length; c++) {
-        const adjustedPattern = structuredClone(pattern);
-        adjustedPattern[r][c] = adjustedPattern[r][c] === '#' ? '.' : '#';
+    const v1 = pattern.getColsLeftOfVerticalLineOfReflection();
+    const h1 = pattern.getRowsAboveHorizontalLineOfReflection();
 
-        const v2 = getVerticalLineOfReflection(adjustedPattern, v1 ? v1 - 1 : -1);
-        if (v2 && v1 !== v2) {
-          totalColsLeftOfVerticalLineOfReflection += v2;
-          found = true;
-        }
+    (function adjustAndResummarize() {
+      for (let r = 0; r < pattern.rows; r++) {
+        for (let c = 0; c < pattern.columns; c++) {
+          const adjustedPattern = pattern.smudge(r, c);
 
-        const h2 = getHorizontalLineOfReflection(adjustedPattern, h1 ? h1 - 1 : -1);
-        if (h2 && h1 !== h2) {
-          totalRowsAboveHorizontalLineOfReflection += h2;
-          found = true;
+          const v2 = adjustedPattern.getColsLeftOfVerticalLineOfReflection({ disallowed: v1 - 1 });
+          if (v2 && v1 !== v2) {
+            totalColsLeftOfVerticalLineOfReflection += v2;
+            return;
+          }
+
+          const h2 = adjustedPattern.getRowsAboveHorizontalLineOfReflection({ disallowed: h1 - 1 });
+          if (h2 && h1 !== h2) {
+            totalRowsAboveHorizontalLineOfReflection += h2;
+            return;
+          }
         }
       }
-    }
+    })();
   }
 
   return (
