@@ -158,7 +158,7 @@ export const getPartTwoSolution = (input: string): string => {
             disallowedColumn: v1 - 1,
           });
 
-          if (v2 && v1 !== v2) {
+          if (v2) {
             totalColsLeftOfVerticalLineOfReflection += v2;
             return;
           }
@@ -167,7 +167,7 @@ export const getPartTwoSolution = (input: string): string => {
             disallowedRow: h1 - 1,
           });
 
-          if (h2 && h1 !== h2) {
+          if (h2) {
             totalRowsAboveHorizontalLineOfReflection += h2;
             return;
           }
