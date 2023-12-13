@@ -1,4 +1,4 @@
-const getVerticalLineOfReflection = (pattern: string[][]) => {
+const getVerticalLineOfReflection = (pattern: string[][], disallowed = -1) => {
   const linesOfReflection: number[] = [];
 
   for (let c = 0; c < pattern[0].length - 1; c++) {
@@ -16,6 +16,9 @@ const getVerticalLineOfReflection = (pattern: string[][]) => {
 
   for (const possibility of linesOfReflection) {
     const col = possibility;
+    if (col === disallowed) {
+      continue;
+    }
     let isMirror = true;
     const matchedCols: number[] = [col, col + 1];
     for (let c = 1; c < pattern[0].length; c++) {
@@ -43,7 +46,7 @@ const getVerticalLineOfReflection = (pattern: string[][]) => {
   return 0;
 };
 
-const getHorizontalLineOfReflection = (pattern: string[][]) => {
+const getHorizontalLineOfReflection = (pattern: string[][], disallowed = -1) => {
   const linesOfReflection: number[] = [];
   for (let r = 0; r < pattern.length - 1; r++) {
     let match = true;
@@ -60,6 +63,9 @@ const getHorizontalLineOfReflection = (pattern: string[][]) => {
 
   for (const possibility of linesOfReflection) {
     const row = possibility;
+    if (row === disallowed) {
+      continue;
+    }
     let isMirror = true;
     const matchedRows: number[] = [row, row + 1];
     for (let r = 1; r <= pattern.length; r++) {
@@ -114,7 +120,46 @@ export const getPartOneSolution = (input: string): string => {
 };
 
 export const getPartTwoSolution = (input: string): string => {
-  const lines = input.split('\n').filter(Boolean);
+  const patterns: Array<string[][]> = [[]];
+  const lines = input.trim().split('\n');
 
-  return lines.toString();
+  lines.forEach((line) => {
+    if (!line) {
+      patterns.push([]);
+      return;
+    }
+
+    patterns.at(-1)?.push([...line]);
+  });
+
+  let totalColsLeftOfVerticalLineOfReflection = 0;
+  let totalRowsAboveHorizontalLineOfReflection = 0;
+  for (const pattern of patterns) {
+    const v1 = getVerticalLineOfReflection(pattern);
+    const h1 = getHorizontalLineOfReflection(pattern);
+    let found = false;
+    for (let r = 0; !found && r < pattern.length; r++) {
+      for (let c = 0; !found && c < pattern[r].length; c++) {
+        const adjustedPattern = structuredClone(pattern);
+        adjustedPattern[r][c] = adjustedPattern[r][c] === '#' ? '.' : '#';
+
+        const v2 = getVerticalLineOfReflection(adjustedPattern, v1 ? v1 - 1 : -1);
+        if (v2 && v1 !== v2) {
+          totalColsLeftOfVerticalLineOfReflection += v2;
+          found = true;
+        }
+
+        const h2 = getHorizontalLineOfReflection(adjustedPattern, h1 ? h1 - 1 : -1);
+        if (h2 && h1 !== h2) {
+          totalRowsAboveHorizontalLineOfReflection += h2;
+          found = true;
+        }
+      }
+    }
+  }
+
+  return (
+    totalColsLeftOfVerticalLineOfReflection +
+    100 * totalRowsAboveHorizontalLineOfReflection
+  ).toString();
 };
