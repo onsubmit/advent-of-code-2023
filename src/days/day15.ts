@@ -10,7 +10,7 @@ const getHash = memoizee(
       const ascii = char.charCodeAt(0);
       currentValue += ascii;
       currentValue *= 17;
-      currentValue = currentValue % 256;
+      currentValue %= 256;
     }
     return currentValue;
   },
@@ -58,12 +58,12 @@ export const getPartTwoSolution = (input: string): string => {
     }
   }
 
-  let sum = 0;
+  let totalFocusingPower = 0;
   for (const [box, labelToFocalLengthMap] of boxes.entries()) {
-    [...labelToFocalLengthMap].forEach(([_label, focalLength], i) => {
-      sum += (box + 1) * (i + 1) * focalLength;
+    [...labelToFocalLengthMap].forEach(([_label, focalLength], slot) => {
+      totalFocusingPower += (box + 1) * (slot + 1) * focalLength;
     });
   }
 
-  return sum.toString();
+  return totalFocusingPower.toString();
 };
