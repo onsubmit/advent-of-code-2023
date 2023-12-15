@@ -1,8 +1,10 @@
-export const getPartOneSolution = (input: string): string => {
-  const strings = input.trim().split(',');
+import memoizee from 'memoizee';
 
-  let sum = 0;
-  for (const string of strings) {
+type LabelToFocalLengthMap = Map<string, number>;
+type BoxToLabelToFocalLengthMap = Map<number, LabelToFocalLengthMap>;
+
+const getHash = memoizee(
+  (string: string): number => {
     let currentValue = 0;
     for (const char of [...string]) {
       const ascii = char.charCodeAt(0);
@@ -10,14 +12,58 @@ export const getPartOneSolution = (input: string): string => {
       currentValue *= 17;
       currentValue = currentValue % 256;
     }
-    sum += currentValue;
+    return currentValue;
+  },
+  { primitive: true }
+);
+
+export const getPartOneSolution = (input: string): string => {
+  const strings = input.trim().split(',');
+
+  let sum = 0;
+  for (const string of strings) {
+    sum += getHash(string);
   }
 
   return sum.toString();
 };
 
 export const getPartTwoSolution = (input: string): string => {
-  const lines = input.split('\n').filter(Boolean);
+  const strings = input.trim().split(',');
 
-  return lines.toString();
+  const boxes: BoxToLabelToFocalLengthMap = new Map();
+  for (const string of strings) {
+    if (string.includes('=')) {
+      const [label, focalLengthStr] = string.split('=');
+      const focalLength = parseInt(focalLengthStr, 10);
+      const box = getHash(label);
+
+      const labelToFocalLengthMap = boxes.get(box);
+      if (labelToFocalLengthMap) {
+        labelToFocalLengthMap.set(label, focalLength);
+      } else {
+        boxes.set(box, new Map([[label, focalLength]]));
+      }
+    } else {
+      const [label] = string.split('-');
+      const box = getHash(label);
+
+      const labelToFocalLengthMap = boxes.get(box);
+      if (labelToFocalLengthMap) {
+        labelToFocalLengthMap.delete(label);
+        if (!labelToFocalLengthMap.size) {
+          boxes.delete(box);
+        }
+      }
+    }
+  }
+
+  let sum = 0;
+  for (const [box, labelToFocalLengthMap] of boxes.entries()) {
+    [...labelToFocalLengthMap].forEach(([_label, focalLength], i) => {
+      sum += (box + 1) * (i + 1) * focalLength;
+    });
+  }
+
+  return sum.toString();
 };
