@@ -1,27 +1,34 @@
 import { Coordinate } from '../coordinate';
 
+type SpaceChar = '.' | '/' | '\\' | '|' | '-';
 type Direction = 'north' | 'south' | 'east' | 'west';
 type Space = {
-  value: string;
-  position: Coordinate;
-  energized: boolean;
+  value: SpaceChar;
+  coordinate: Coordinate;
+  isEnergized: boolean;
   previousBeamDirections: Set<Direction>;
+};
+type Spaces = Array<Array<Space>>;
+type Beam = {
+  position: Coordinate;
+  direction: Direction;
 };
 
 export const getPartOneSolution = (input: string): string => {
   const lines = input.split('\n').filter(Boolean);
 
-  const spaces: Space[][] = lines.map<Space[]>((line, row) =>
+  const spaces: Spaces = lines.map<Space[]>((line, row) =>
     [...line].map<Space>((value, column) => ({
-      value,
-      position: { row, column },
-      energized: false,
+      value: value as SpaceChar,
+      coordinate: { row, column },
+      isEnergized: false,
       previousBeamDirections: new Set(),
     }))
   );
 
-  const beams: Map<number, { position: Coordinate; direction: Direction }> = new Map([
-    [0, { position: { row: 0, column: 0 }, direction: 'east' }],
+  let beamCounter = 0;
+  const beams: Map<number, Beam> = new Map([
+    [beamCounter, { position: { row: 0, column: 0 }, direction: 'east' }],
   ]);
 
   while (true) {
@@ -43,7 +50,7 @@ export const getPartOneSolution = (input: string): string => {
       }
 
       iterating = true;
-      spaces[row][column].energized = true;
+      spaces[row][column].isEnergized = true;
       spaces[row][column].previousBeamDirections.add(direction);
       switch (spaces[row][column].value) {
         case '.': {
@@ -136,8 +143,7 @@ export const getPartOneSolution = (input: string): string => {
               // New beam goes South
               newBeam.position.row++;
               newBeam.direction = 'south';
-              const newBeamNum = Math.max(...beams.keys()) + 1;
-              beams.set(newBeamNum, newBeam);
+              beams.set(++beamCounter, newBeam);
               break;
             }
             case 'west': {
@@ -149,8 +155,7 @@ export const getPartOneSolution = (input: string): string => {
               // New beam goes South
               newBeam.position.row++;
               newBeam.direction = 'south';
-              const newBeamNum = Math.max(...beams.keys()) + 1;
-              beams.set(newBeamNum, newBeam);
+              beams.set(++beamCounter, newBeam);
               break;
             }
           }
@@ -167,8 +172,7 @@ export const getPartOneSolution = (input: string): string => {
               // New beam goes East
               newBeam.position.column++;
               newBeam.direction = 'east';
-              const newBeamNum = Math.max(...beams.keys()) + 1;
-              beams.set(newBeamNum, newBeam);
+              beams.set(++beamCounter, newBeam);
               break;
             }
             case 'south': {
@@ -180,8 +184,7 @@ export const getPartOneSolution = (input: string): string => {
               // New beam goes East
               newBeam.position.column++;
               newBeam.direction = 'east';
-              const newBeamNum = Math.max(...beams.keys()) + 1;
-              beams.set(newBeamNum, newBeam);
+              beams.set(++beamCounter, newBeam);
               break;
             }
             case 'east': {
@@ -203,12 +206,12 @@ export const getPartOneSolution = (input: string): string => {
     }
   }
 
-  console.log(spaces.map((s) => s.map((x) => (x.energized ? '#' : x.value)).join('')).join('\n'));
+  console.log(spaces.map((s) => s.map((x) => (x.isEnergized ? '#' : x.value)).join('')).join('\n'));
 
   let count = 0;
   for (let r = 0; r < spaces.length; r++) {
     for (let c = 0; c < spaces[r].length; c++) {
-      if (spaces[r][c].energized) {
+      if (spaces[r][c].isEnergized) {
         count++;
       }
     }
@@ -240,7 +243,7 @@ export const getPartTwoSolution = (input: string): string => {
         }
 
         iterating = true;
-        spaces[row][column].energized = true;
+        spaces[row][column].isEnergized = true;
         spaces[row][column].previousBeamDirections.add(direction);
         switch (spaces[row][column].value) {
           case '.': {
@@ -403,9 +406,9 @@ export const getPartTwoSolution = (input: string): string => {
 
   let spaces: Space[][] = lines.map<Space[]>((line, row) =>
     [...line].map<Space>((value, column) => ({
-      value,
-      position: { row, column },
-      energized: false,
+      value: value as SpaceChar,
+      coordinate: { row, column },
+      isEnergized: false,
       previousBeamDirections: new Set(),
     }))
   );
@@ -415,9 +418,9 @@ export const getPartTwoSolution = (input: string): string => {
     for (let column = 0; column < spaces[0].length; column++) {
       spaces = lines.map<Space[]>((line, row) =>
         [...line].map<Space>((value, column) => ({
-          value,
-          position: { row, column },
-          energized: false,
+          value: value as SpaceChar,
+          coordinate: { row, column },
+          isEnergized: false,
           previousBeamDirections: new Set(),
         }))
       );
@@ -431,7 +434,7 @@ export const getPartTwoSolution = (input: string): string => {
       let count = 0;
       for (let r = 0; r < spaces.length; r++) {
         for (let c = 0; c < spaces[r].length; c++) {
-          if (spaces[r][c].energized) {
+          if (spaces[r][c].isEnergized) {
             count++;
           }
         }
@@ -445,9 +448,9 @@ export const getPartTwoSolution = (input: string): string => {
     for (let row = 0; row < spaces.length; row++) {
       spaces = lines.map<Space[]>((line, row) =>
         [...line].map<Space>((value, column) => ({
-          value,
-          position: { row, column },
-          energized: false,
+          value: value as SpaceChar,
+          coordinate: { row, column },
+          isEnergized: false,
           previousBeamDirections: new Set(),
         }))
       );
@@ -461,7 +464,7 @@ export const getPartTwoSolution = (input: string): string => {
       let count = 0;
       for (let r = 0; r < spaces.length; r++) {
         for (let c = 0; c < spaces[r].length; c++) {
-          if (spaces[r][c].energized) {
+          if (spaces[r][c].isEnergized) {
             count++;
           }
         }
@@ -471,7 +474,7 @@ export const getPartTwoSolution = (input: string): string => {
     }
   }
 
-  console.log(spaces.map((s) => s.map((x) => (x.energized ? '#' : x.value)).join('')).join('\n'));
+  console.log(spaces.map((s) => s.map((x) => (x.isEnergized ? '#' : x.value)).join('')).join('\n'));
 
   return max.toString();
 };
