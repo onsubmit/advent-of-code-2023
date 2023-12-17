@@ -8,6 +8,7 @@
     flex-direction: row;
     gap: 2rem;
     width: 40rem;
+    margin-bottom: 2rem;
 
     .part {
       display: flex;

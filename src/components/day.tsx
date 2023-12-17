@@ -1,6 +1,7 @@
 import { Button, Link, TextField } from '@mui/material';
 import { useState } from 'react';
 
+import { getInput, setInput } from '../localStorage';
 import styles from './day.module.css';
 
 export type DayProps = {
@@ -18,18 +19,28 @@ type DayState = {
 
 export default function Day({ day, getPartOneSolution, getPartTwoSolution }: DayProps) {
   const [part1State, setPart1State] = useState<DayState>({
-    input: '',
+    input: getInput(day, 1),
     output: '',
     iterations: 1,
     timing: '',
   });
 
   const [part2State, setPart2State] = useState<DayState>({
-    input: '',
+    input: getInput(day, 2),
     output: '',
     iterations: 1,
     timing: '',
   });
+
+  const cacheAndSetPart1State = (input: string): void => {
+    setInput(day, 1, input);
+    setPart1State((s) => ({ ...s, input }));
+  };
+
+  const cacheAndSetPart2State = (input: string): void => {
+    setInput(day, 2, input);
+    setPart2State((s) => ({ ...s, input }));
+  };
 
   return (
     <div className={styles.day}>
@@ -51,7 +62,7 @@ export default function Day({ day, getPartOneSolution, getPartTwoSolution }: Day
             multiline
             rows={4}
             value={part1State.input}
-            onChange={(e) => setPart1State((s) => ({ ...s, input: e.target.value }))}
+            onChange={(e) => cacheAndSetPart1State(e.target.value)}
           />
           <TextField label="Part 1 output" disabled value={part1State.output} />
           <TextField label="Part 1 timing" disabled value={part1State.timing} />
@@ -102,7 +113,7 @@ export default function Day({ day, getPartOneSolution, getPartTwoSolution }: Day
             multiline
             rows={4}
             value={part2State.input}
-            onChange={(e) => setPart2State((s) => ({ ...s, input: e.target.value }))}
+            onChange={(e) => cacheAndSetPart2State(e.target.value)}
           />
           <TextField label="Part 2 output" disabled value={part2State.output} />
           <TextField label="Part 2 timing" disabled value={part2State.timing} />
@@ -147,6 +158,20 @@ export default function Day({ day, getPartOneSolution, getPartTwoSolution }: Day
             />
           </div>
         </div>
+      </div>
+      <div>
+        <Button
+          variant="outlined"
+          onClick={() => {
+            setInput(day, 1, '');
+            setInput(day, 2, '');
+
+            setPart1State((s) => ({ ...s, input: '' }));
+            setPart2State((s) => ({ ...s, input: '' }));
+          }}
+        >
+          Clean input cache
+        </Button>
       </div>
     </div>
   );
