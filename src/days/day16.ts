@@ -1,4 +1,5 @@
 import { Coordinate } from '../coordinate';
+import { inputTo2dArray } from '../inputHelper';
 
 type SpaceChar = '.' | '/' | '\\' | '|' | '-';
 type Direction = 'north' | 'south' | 'east' | 'west';
@@ -130,15 +131,13 @@ const stepBeam = (space: Space, beam: Beam): Beam | void => {
   }
 };
 
-const getInitialSpaces = (lines: string[]): Spaces =>
-  lines.map<Space[]>((line, row) =>
-    [...line].map<Space>((value, column) => ({
-      value: value as SpaceChar,
-      coordinate: { row, column },
-      isEnergized: false,
-      previousBeamDirections: new Set(),
-    }))
-  );
+const getInitialSpaces = (input: string): Spaces =>
+  inputTo2dArray<Space, Space['value']>(input, (character, row, column) => ({
+    value: character,
+    coordinate: { row, column },
+    isEnergized: false,
+    previousBeamDirections: new Set(),
+  }));
 
 const stepBeams = (spaces: Spaces, beams: Map<number, Beam>) => {
   let beamCounter = beams.size;
@@ -179,8 +178,7 @@ const stepBeams = (spaces: Spaces, beams: Map<number, Beam>) => {
 };
 
 export const getPartOneSolution = (input: string): string => {
-  const lines = input.split('\n').filter(Boolean);
-  const spaces = getInitialSpaces(lines);
+  const spaces = getInitialSpaces(input);
 
   const beams: Map<number, Beam> = new Map([[0, new Beam({ row: 0, column: 0 }, 'east')]]);
   stepBeams(spaces, beams);
@@ -198,14 +196,12 @@ export const getPartOneSolution = (input: string): string => {
 };
 
 export const getPartTwoSolution = (input: string): string => {
-  const lines = input.split('\n').filter(Boolean);
-
-  let spaces = getInitialSpaces(lines);
+  let spaces = getInitialSpaces(input);
 
   let max = Number.MIN_SAFE_INTEGER;
   for (const row of [0, spaces.length - 1]) {
     for (let column = 0; column < spaces[0].length; column++) {
-      spaces = getInitialSpaces(lines);
+      spaces = getInitialSpaces(input);
 
       const beams: Map<number, Beam> = new Map([
         [0, new Beam({ row, column }, row === 0 ? 'south' : 'north')],
@@ -228,7 +224,7 @@ export const getPartTwoSolution = (input: string): string => {
 
   for (const column of [0, spaces[0].length - 1]) {
     for (let row = 0; row < spaces.length; row++) {
-      spaces = getInitialSpaces(lines);
+      spaces = getInitialSpaces(input);
 
       const beams: Map<number, Beam> = new Map([
         [0, new Beam({ row, column }, column === 0 ? 'east' : 'west')],
