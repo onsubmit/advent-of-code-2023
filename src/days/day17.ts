@@ -156,34 +156,22 @@ const dijkstra2 = (digits: number[][]) => {
       if (!visited[r + 1][c] && distances[r + 1][c] > digits[r + 1][c] + distances[r][c]) {
         let backTracker = backTrack[r][c];
         let runLength = 0;
-        while (backTracker) {
-          if (
-            backTracker.fromDirection === 'south' &&
-            backTracker.coordinate.row < r &&
-            backTracker.coordinate.column === c
-          ) {
-            runLength++;
-          } else {
-            break;
-          }
-
-          if (runLength > 3) {
-            console.log();
-          }
-
+        while (backTracker?.fromDirection === 'south') {
+          runLength++;
           backTracker = backTrack[backTracker.coordinate.row][backTracker.coordinate.column];
         }
 
         if (runLength <= 3) {
-          distances[r + 1][c] =
-            runLength > 3 ? Number.MAX_SAFE_INTEGER : digits[r + 1][c] + distances[r][c];
-          backTrack[r + 1][c] =
-            runLength > 3
-              ? undefined
-              : {
-                  coordinate: { row: r, column: c },
-                  fromDirection: 'south',
-                };
+          distances[r + 1][c] = digits[r + 1][c] + distances[r][c];
+
+          if (backTrack[r + 1][c]) {
+            debugger;
+          }
+
+          backTrack[r + 1][c] = {
+            coordinate: { row: r, column: c },
+            fromDirection: 'south',
+          };
         }
       }
     }
@@ -193,34 +181,22 @@ const dijkstra2 = (digits: number[][]) => {
       if (!visited[r - 1][c] && distances[r - 1][c] > digits[r - 1][c] + distances[r][c]) {
         let backTracker = backTrack[r][c];
         let runLength = 0;
-        while (backTracker) {
-          if (
-            backTracker.fromDirection === 'north' &&
-            backTracker.coordinate.row > r &&
-            backTracker.coordinate.column === c
-          ) {
-            runLength++;
-          } else {
-            break;
-          }
-
-          if (runLength > 3) {
-            console.log();
-          }
-
+        while (backTracker?.fromDirection === 'north') {
+          runLength++;
           backTracker = backTrack[backTracker.coordinate.row][backTracker.coordinate.column];
         }
 
         if (runLength <= 3) {
-          distances[r - 1][c] =
-            runLength > 3 ? Number.MAX_SAFE_INTEGER : digits[r - 1][c] + distances[r][c];
-          backTrack[r - 1][c] =
-            runLength > 3
-              ? undefined
-              : {
-                  coordinate: { row: r, column: c },
-                  fromDirection: 'north',
-                };
+          distances[r - 1][c] = digits[r - 1][c] + distances[r][c];
+
+          if (backTrack[r - 1][c]) {
+            debugger;
+          }
+
+          backTrack[r - 1][c] = {
+            coordinate: { row: r, column: c },
+            fromDirection: 'north',
+          };
         }
       }
     }
@@ -230,34 +206,22 @@ const dijkstra2 = (digits: number[][]) => {
       if (!visited[r][c + 1] && distances[r][c + 1] > digits[r][c + 1] + distances[r][c]) {
         let backTracker = backTrack[r][c];
         let runLength = 0;
-        while (backTracker) {
-          if (
-            backTracker.fromDirection === 'east' &&
-            backTracker.coordinate.row === r &&
-            backTracker.coordinate.column < c
-          ) {
-            runLength++;
-          } else {
-            break;
-          }
-
-          if (runLength > 3) {
-            console.log();
-          }
-
+        while (backTracker?.fromDirection === 'east') {
+          runLength++;
           backTracker = backTrack[backTracker.coordinate.row][backTracker.coordinate.column];
         }
 
         if (runLength <= 3) {
-          distances[r][c + 1] =
-            runLength > 3 ? Number.MAX_SAFE_INTEGER : digits[r][c + 1] + distances[r][c];
-          backTrack[r][c + 1] =
-            runLength > 3
-              ? undefined
-              : {
-                  coordinate: { row: r, column: c },
-                  fromDirection: 'east',
-                };
+          distances[r][c + 1] = digits[r][c + 1] + distances[r][c];
+
+          if (backTrack[r][c + 1]) {
+            debugger;
+          }
+
+          backTrack[r][c + 1] = {
+            coordinate: { row: r, column: c },
+            fromDirection: 'east',
+          };
         }
       }
     }
@@ -267,34 +231,22 @@ const dijkstra2 = (digits: number[][]) => {
       if (!visited[r][c - 1] && distances[r][c - 1] > digits[r][c - 1] + distances[r][c]) {
         let backTracker = backTrack[r][c];
         let runLength = 0;
-        while (backTracker) {
-          if (
-            backTracker.fromDirection === 'west' &&
-            backTracker.coordinate.row === r &&
-            backTracker.coordinate.column > c
-          ) {
-            runLength++;
-          } else {
-            break;
-          }
-
-          if (runLength > 3) {
-            console.log();
-          }
-
+        while (backTracker?.fromDirection === 'west') {
+          runLength++;
           backTracker = backTrack[backTracker.coordinate.row][backTracker.coordinate.column];
         }
 
         if (runLength <= 3) {
-          distances[r][c - 1] =
-            runLength > 3 ? Number.MAX_SAFE_INTEGER : digits[r][c - 1] + distances[r][c];
-          backTrack[r][c - 1] =
-            runLength > 3
-              ? undefined
-              : {
-                  coordinate: { row: r, column: c },
-                  fromDirection: 'west',
-                };
+          distances[r][c - 1] = digits[r][c - 1] + distances[r][c];
+
+          if (backTrack[r][c - 1]) {
+            debugger;
+          }
+
+          backTrack[r][c - 1] = {
+            coordinate: { row: r, column: c },
+            fromDirection: 'west',
+          };
         }
       }
     }
@@ -329,11 +281,11 @@ const dijkstra2 = (digits: number[][]) => {
   const path: Coordinate[] = [];
   let u: Coordinate | undefined = { row: rows - 1, column: columns - 1 };
   while (u) {
-    path.push(u);
+    path.unshift(u);
     u = backTrack[u.row][u.column]?.coordinate;
   }
 
-  return path.reverse();
+  return path;
 };
 
 export const getPartOneSolution = (input: string): string => {
