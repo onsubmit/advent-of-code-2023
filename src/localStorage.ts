@@ -2,11 +2,13 @@ type Cache = Record<string, string>;
 
 const LOCAL_STORAGE_KEY = 'cache';
 
+const getDayPartKey = (day: number, part: number): string => {
+  return [day, part].join();
+};
+
 export const setInput = (day: number, part: number, value: string): void => {
   const cache = getCache();
-
-  const key = `${day}-${part}`;
-  cache[key] = value;
+  cache[getDayPartKey(day, part)] = value;
 
   try {
     const cacheStr = JSON.stringify(cache);
@@ -18,9 +20,7 @@ export const setInput = (day: number, part: number, value: string): void => {
 
 export const getInput = (day: number, part: number): string => {
   const cache = getCache();
-
-  const key = `${day}-${part}`;
-  return cache[key] ?? '';
+  return cache[getDayPartKey(day, part)] ?? '';
 };
 
 const getCache = (): Cache => {
