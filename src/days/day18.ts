@@ -1,6 +1,7 @@
 import { Coordinate } from '../coordinate';
 
-type Direction = 'U' | 'D' | 'L' | 'R';
+const directions = ['R', 'D', 'L', 'U'] as const;
+type Direction = (typeof directions)[number];
 type Plan = {
   direction: Direction;
   distance: number;
@@ -59,7 +60,6 @@ export const getPartTwoSolution = (input: string): string => {
   const lines = input.split('\n').filter(Boolean);
 
   const plans: Plan[] = lines.map((line) => {
-    const directions: Direction[] = ['R', 'D', 'L', 'U'];
     const hexArr = [...line.split(' ').at(-1)!];
     const direction = directions[parseInt(hexArr.at(-2)!, 10)];
     const distance = parseInt(hexArr.slice(2, -2)!.join(''), 16);
