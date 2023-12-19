@@ -9,7 +9,7 @@ type Operation =
       operator: Operator;
       value: number;
     }
-  | string;
+  | string; // Just the workflow name
 
 type Rule = {
   operations: Operation[];
@@ -19,44 +19,69 @@ type Rating = {
   value: number;
 };
 
-export const getPartOneSolution = (input: string): string => {
-  const lines = input.split('\n');
-
+const parseWorkflow = (line: string) => {
   // px{a<2006:qkq,m>2090:A,rfg}
-  let parseRatings = false;
+  const [name, operationsStr] = line.split('{');
+  const operationsArr: string[] = operationsStr.slice(0, -1).split(',');
+
+  const operations = operationsArr.map<Operation>((operationStr) => {
+    if (operationStr.includes(':')) {
+      const [formula, workflow] = operationStr.split(':');
+      const part = formula.at(0)!;
+      const operator = formula.at(1)! as Operator;
+      const value = parseInt(formula.slice(2), 10);
+      return { workflow, part, operator, value };
+    } else {
+      return operationStr;
+    }
+  });
+
+  return { name, operations };
+};
+
+const parseRatings = (line: string) => {
+  //{x=787,m=2655,a=1222,s=2876}
+  const partRatings: Map<string, Rating> = new Map();
+  const ratingsArr: string[] = line.slice(1, -1).split(',');
+  for (const ratingStr of ratingsArr) {
+    const [name, valueStr] = ratingStr.split('=');
+    const value = parseInt(valueStr, 10);
+    partRatings.set(name, { value });
+  }
+
+  return partRatings;
+};
+
+const evaluateOperation = (
+  operation: Operation,
+  partRatings: Map<string, Rating>
+): { newCurrent: string } | false => {
+  if (typeof operation === 'string') {
+    return { newCurrent: operation };
+  } else {
+    const { workflow, part, operator, value: operationValue } = operation;
+    const { value: ratingValue } = partRatings.get(part)!;
+    if (
+      (operator === '>' && ratingValue > operationValue) ||
+      (operator === '<' && ratingValue < operationValue)
+    ) {
+      return { newCurrent: workflow };
+    }
+  }
+
+  return false;
+};
+
+export const getPartOneSolution = (input: string): string => {
+  const lines = input.split('\n').filter(Boolean);
+
   const rules: Map<string, Rule> = new Map();
   const ratings: Array<Map<string, Rating>> = [];
   lines.forEach((line) => {
-    if (!line) {
-      parseRatings = true;
-      return;
-    }
-
-    if (parseRatings) {
-      const partRatings: Map<string, Rating> = new Map();
-      const ratingsArr: string[] = line.substring(1, line.length - 1).split(',');
-      for (const ratingStr of ratingsArr) {
-        const [name, valueStr] = ratingStr.split('=');
-        const value = parseInt(valueStr, 10);
-        partRatings.set(name, { value });
-      }
-      ratings.push(partRatings);
+    if (line.startsWith('{')) {
+      ratings.push(parseRatings(line));
     } else {
-      const [name, operationsStr] = line.split('{');
-      const operationsArr: string[] = operationsStr.slice(0, -1).split(',');
-
-      const operations: Operation[] = [];
-      for (const operationStr of operationsArr) {
-        if (operationStr.includes(':')) {
-          const [formula, workflow] = operationStr.split(':');
-          const part = formula.at(0)!;
-          const operator = formula.at(1)! as Operator;
-          const value = parseInt(formula.substring(2), 10);
-          operations.push({ workflow, part, operator, value });
-        } else {
-          operations.push(operationStr);
-        }
-      }
+      const { name, operations } = parseWorkflow(line);
       rules.set(name, { operations });
     }
   });
@@ -67,34 +92,24 @@ export const getPartOneSolution = (input: string): string => {
   for (const partRatings of ratings) {
     let iterate = true;
     while (iterate) {
-      let changedCurrent = false;
       for (const operation of rule.operations) {
-        if (typeof operation === 'string') {
-          current = operation;
-          changedCurrent = true;
-        } else {
-          const rating = partRatings.get(operation.part)!;
-          if (operation.operator === '>' && rating.value > operation.value) {
-            current = operation.workflow;
-            changedCurrent = true;
-          } else if (operation.operator === '<' && rating.value < operation.value) {
-            current = operation.workflow;
-            changedCurrent = true;
-          }
+        const evaluation = evaluateOperation(operation, partRatings);
+        if (!evaluation) {
+          continue;
         }
 
-        if (changedCurrent) {
-          rule = rules.get(current)!;
-          if (current === 'A') {
-            sum += sumArray([...partRatings.values()].map((r) => r.value));
-            rule = rules.get('in')!;
-            iterate = false;
-          } else if (current === 'R') {
-            rule = rules.get('in')!;
-            iterate = false;
-          }
-          break;
+        current = evaluation.newCurrent;
+        if (current === 'A') {
+          sum += sumArray([...partRatings.values()].map((r) => r.value));
+          current = 'in';
+          iterate = false;
+        } else if (current === 'R') {
+          current = 'in';
+          iterate = false;
         }
+
+        rule = rules.get(current)!;
+        break;
       }
     }
   }
