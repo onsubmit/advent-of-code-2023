@@ -4,7 +4,7 @@ type ModuleType = 'flip-flop' | 'conjuction' | 'broadcast';
 type Pulse = 'high' | 'low';
 
 type Module = {
-  connectedModuleNames: string[];
+  destinations: string[];
 } & (
   | {
       type: 'broadcast';
@@ -25,7 +25,35 @@ type SentPulse = {
   pulse: Pulse;
 };
 
+type Accumulators = {
+  lowPulseIterations: Map<string, number>;
+  buttonPresses: number;
+};
+
 type Modules = Map<string, Module>;
+
+const buildModule = (type: ModuleType, destinations: string[]): Module => {
+  if (type === 'flip-flop') {
+    return {
+      type,
+      isOn: false,
+      destinations,
+    };
+  }
+
+  if (type === 'conjuction') {
+    return {
+      type,
+      destinations,
+      memory: new Map(),
+    };
+  }
+
+  return {
+    type,
+    destinations,
+  };
+};
 
 const getModules = (input: string): Modules => {
   const lines = input.split('\n').filter(Boolean);
@@ -45,44 +73,20 @@ const getModules = (input: string): Modules => {
       moduleType = 'broadcast';
       moduleName = prefix;
     } else {
-      switch (prefix.at(0)) {
-        case '%':
-          moduleType = 'flip-flop';
-          break;
-        case '&':
-          moduleType = 'conjuction';
-          break;
-      }
+      moduleType = prefix.at(0) === '%' ? 'flip-flop' : 'conjuction';
       moduleName = prefix.slice(1);
     }
 
-    const connectedModuleNames = suffix.split(',').map((p) => p.trim());
-    if (moduleType === 'flip-flop') {
-      modules.set(moduleName, {
-        type: moduleType,
-        isOn: false,
-        connectedModuleNames,
-      });
-    } else if (moduleType === 'conjuction') {
-      modules.set(moduleName, {
-        type: moduleType,
-        connectedModuleNames,
-        memory: new Map(),
-      });
-    } else {
-      modules.set(moduleName, {
-        type: moduleType,
-        connectedModuleNames,
-      });
-    }
+    const destinations = suffix.split(',').map((p) => p.trim());
+    modules.set(moduleName, buildModule(moduleType, destinations));
   });
 
   // Set initial memory for conjuction modules.
   for (const [name, module] of modules.entries()) {
-    for (const connected of module.connectedModuleNames) {
-      const connectedModule = modules.get(connected);
-      if (connectedModule?.type === 'conjuction') {
-        connectedModule.memory.set(name, 'low');
+    for (const destination of module.destinations) {
+      const destinationModule = modules.get(destination);
+      if (destinationModule?.type === 'conjuction') {
+        destinationModule.memory.set(name, 'low');
       }
     }
   }
@@ -94,7 +98,8 @@ const handlePulse = (
   modules: Modules,
   moduleName: string,
   pulse: Pulse,
-  from: string
+  from: string,
+  accumulators: Accumulators
 ): Array<SentPulse> => {
   //console.log(`${from} -${pulse}-> ${moduleName}`);
   const module = modules.get(moduleName);
@@ -102,36 +107,53 @@ const handlePulse = (
     return [];
   }
 
-  const { type, connectedModuleNames } = module;
+  // Final conjunction module has 4 inputs: 'nh', 'dr', 'xm', 'tr'.
+  // Remember when they receive their first low input.
+  // Assume that is their cycle length.
+  if (
+    pulse === 'low' &&
+    !accumulators.lowPulseIterations.has(moduleName) &&
+    ['nh', 'dr', 'xm', 'tr'].includes(moduleName)
+  ) {
+    accumulators.lowPulseIterations.set(moduleName, accumulators.buttonPresses);
+  }
 
-  const newPulsesToSend: Array<SentPulse> = [];
+  const { type, destinations } = module;
+
+  const futurePulsesToSend: Array<SentPulse> = [];
   switch (type) {
     case 'broadcast': {
-      for (const connected of connectedModuleNames) {
-        newPulsesToSend.push({ to: connected, pulse, from: moduleName });
+      // When a broadcast module receives a pulse, it sends the same pulse to all of its destination modules.
+      for (const destination of destinations) {
+        futurePulsesToSend.push({ to: destination, pulse, from: moduleName });
       }
       break;
     }
     case 'flip-flop': {
+      // If a flip-flop module receives a high pulse, it is ignored and nothing happens.
       if (pulse === 'low') {
-        for (const connected of connectedModuleNames) {
-          newPulsesToSend.push({
-            to: connected,
-            pulse: module.isOn ? 'low' : 'high',
+        for (const destination of destinations) {
+          futurePulsesToSend.push({
+            to: destination,
+            pulse: module.isOn ? 'low' : 'high', // If it was off, it sends a high pulse.
             from: moduleName,
           });
         }
 
+        // It flips between on and off.
         module.isOn = !module.isOn;
       }
       break;
     }
     case 'conjuction': {
+      // When a pulse is received, the conjunction module first updates its memory for that input.
       module.memory.set(from, pulse);
+
+      // Then, if it remembers high pulses for all inputs, it sends a low pulse; otherwise, it sends a high pulse.
       const allHigh = [...module.memory.values()].every((p) => p === 'high');
-      for (const connected of connectedModuleNames) {
-        newPulsesToSend.push({
-          to: connected,
+      for (const destination of destinations) {
+        futurePulsesToSend.push({
+          to: destination,
           pulse: allHigh ? 'low' : 'high',
           from: moduleName,
         });
@@ -140,12 +162,18 @@ const handlePulse = (
     }
   }
 
-  return newPulsesToSend;
+  return futurePulsesToSend;
 };
 
-const pressButton = (modules: Modules) => {
-  let lowPulses = 0;
-  let highPulses = 0;
+const pressButton = (
+  modules: Modules,
+  accumulators: Accumulators = {
+    lowPulseIterations: new Map(),
+    buttonPresses: 0,
+  }
+) => {
+  let lowIncrement = 0;
+  let highIncrement = 0;
 
   let tempQueue: Array<SentPulse> = [];
   let queue: Array<SentPulse> = [{ from: 'button', to: 'broadcaster', pulse: 'low' }];
@@ -153,18 +181,19 @@ const pressButton = (modules: Modules) => {
     tempQueue = [];
     while (queue.length) {
       const { from, pulse, to } = queue.shift()!;
-      const newPulses = handlePulse(modules, to, pulse, from);
       if (pulse === 'low') {
-        lowPulses++;
+        lowIncrement++;
       } else {
-        highPulses++;
+        highIncrement++;
       }
-      tempQueue.push(...newPulses);
+
+      const futurePulsesToSend = handlePulse(modules, to, pulse, from, accumulators);
+      tempQueue.push(...futurePulsesToSend);
     }
     queue = tempQueue;
   }
 
-  return { lowPulses, highPulses };
+  return { lowIncrement, highIncrement };
 };
 
 export const getPartOneSolution = (input: string): string => {
@@ -173,9 +202,9 @@ export const getPartOneSolution = (input: string): string => {
   let lowPulses = 0;
   let highPulses = 0;
   for (let i = 0; i < 1000; i++) {
-    const { lowPulses: l, highPulses: h } = pressButton(modules);
-    lowPulses += l;
-    highPulses += h;
+    const { lowIncrement, highIncrement } = pressButton(modules);
+    lowPulses += lowIncrement;
+    highPulses += highIncrement;
   }
 
   const answer = lowPulses * highPulses;
@@ -183,146 +212,20 @@ export const getPartOneSolution = (input: string): string => {
 };
 
 export const getPartTwoSolution = (input: string): string => {
-  const lines = input.split('\n').filter(Boolean);
-
-  // broadcaster -> a, b, c
-  // %a -> b
-  // %b -> c
-  // %c -> inv
-  // &inv -> a
-
-  const modules: Map<string, Module> = new Map();
-  lines.forEach((line) => {
-    const [prefix, suffix] = line.split('->').map((p) => p.trim());
-    let moduleType: ModuleType = 'broadcast';
-    let moduleName: string;
-    if (prefix === 'broadcaster') {
-      moduleType = 'broadcast';
-      moduleName = prefix;
-    } else {
-      switch (prefix.at(0)) {
-        case '%':
-          moduleType = 'flip-flop';
-          break;
-        case '&':
-          moduleType = 'conjuction';
-          break;
-      }
-      moduleName = prefix.slice(1);
-    }
-
-    const connectedModuleNames = suffix.split(',').map((p) => p.trim());
-    if (moduleType === 'flip-flop') {
-      modules.set(moduleName, {
-        type: moduleType,
-        isOn: false,
-        connectedModuleNames,
-      });
-    } else if (moduleType === 'conjuction') {
-      modules.set(moduleName, {
-        type: moduleType,
-        connectedModuleNames,
-        memory: new Map(),
-      });
-    } else {
-      modules.set(moduleName, {
-        type: moduleType,
-        connectedModuleNames,
-      });
-    }
-  });
-
-  for (const [name, module] of modules.entries()) {
-    for (const connected of module.connectedModuleNames) {
-      const connectedModule = modules.get(connected);
-      if (connectedModule?.type === 'conjuction') {
-        connectedModule.memory.set(name, 'low');
-      }
-    }
-  }
-
-  const lowPulseIterations: Map<string, number> = new Map();
-
-  let buttonPresses = 0;
-  const handlePulse = (
-    moduleName: string,
-    pulse: Pulse,
-    from: string
-  ): Array<{ name: string; pulse: Pulse; from: string }> => {
-    // Final conjunction module has 4 inputs: 'nh', 'dr', 'xm', 'tr'.
-    // Remember when they receive their first low input.
-    // Assume that is their cycle length.
-    if (
-      pulse === 'low' &&
-      ['nh', 'dr', 'xm', 'tr'].includes(moduleName) &&
-      !lowPulseIterations.has(moduleName)
-    ) {
-      lowPulseIterations.set(moduleName, buttonPresses);
-    }
-
-    const module = modules.get(moduleName)!;
-    const { type, connectedModuleNames } = module;
-    const newPulsesToSend: Array<{ name: string; pulse: Pulse; from: string }> = [];
-    switch (type) {
-      case 'broadcast': {
-        for (const connected of connectedModuleNames) {
-          newPulsesToSend.push({ name: connected, pulse, from: moduleName });
-        }
-        break;
-      }
-      case 'flip-flop': {
-        if (pulse === 'low') {
-          if (module.isOn) {
-            module.isOn = false;
-            for (const connected of connectedModuleNames) {
-              newPulsesToSend.push({ name: connected, pulse: 'low', from: moduleName });
-            }
-          } else {
-            module.isOn = true;
-            for (const connected of connectedModuleNames) {
-              newPulsesToSend.push({ name: connected, pulse: 'high', from: moduleName });
-            }
-          }
-        }
-        break;
-      }
-      case 'conjuction': {
-        module.memory.set(from, pulse);
-        const allHigh = [...module.memory.values()].every((p) => p === 'high');
-        for (const connected of connectedModuleNames) {
-          newPulsesToSend.push({
-            name: connected,
-            pulse: allHigh ? 'low' : 'high',
-            from: moduleName,
-          });
-        }
-        break;
-      }
-    }
-
-    return newPulsesToSend;
+  const modules = getModules(input);
+  const accumulators: Accumulators = {
+    lowPulseIterations: new Map(),
+    buttonPresses: 0,
   };
 
-  while (lowPulseIterations.size < 4) {
-    buttonPresses++;
-    //console.log('\n');
-    //console.log(`Button press ${i + 1}`);
-    let queue: Array<{ name: string; pulse: Pulse; from: string }> = [
-      { name: 'broadcaster', pulse: 'low', from: 'button' },
-    ];
-    let tempQueue: Array<{ name: string; pulse: Pulse; from: string }> = [];
-    while (queue.length) {
-      tempQueue = [];
-      while (queue.length) {
-        const pulse = queue.shift()!;
-        const newPulses = handlePulse(pulse.name, pulse.pulse, pulse.from);
-        tempQueue.push(...newPulses);
-      }
-      queue = tempQueue;
-    }
+  while (accumulators.lowPulseIterations.size < 4) {
+    accumulators.buttonPresses++;
+    pressButton(modules, accumulators);
   }
 
-  const minButtonPresses = getLeastCommonMultipleForArray([...lowPulseIterations.values()]);
+  const minButtonPresses = getLeastCommonMultipleForArray([
+    ...accumulators.lowPulseIterations.values(),
+  ]);
 
   return minButtonPresses.toString();
 };
