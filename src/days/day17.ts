@@ -1,5 +1,6 @@
 import { sumArray } from '../arrayMethods';
 import { Coordinate } from '../coordinate';
+import { MinPriorityQueue } from '../minPriorityQueue';
 
 type Direction = 'U' | 'D' | 'R' | 'L' | '?';
 type NodeKey = `${string},${string},${Direction},${string}`; // x,y,direction,steps
@@ -23,46 +24,33 @@ const parseNodeKey = (
 };
 
 const dijkstra = (graph: Graph, sourceKey: NodeKey, target: Coordinate) => {
-  const distanceFromSourceTo: Map<NodeKey, number> = new Map();
+  const distanceFromSourceTo: Map<NodeKey, number> = new Map([[sourceKey, 0]]);
   const previous: Map<NodeKey, NodeKey | undefined> = new Map();
-  const unvisitedNodes: NodeKey[] = [];
+  const nodeQueue = new MinPriorityQueue<NodeKey>();
+  nodeQueue.setPriority(sourceKey, Number.MAX_SAFE_INTEGER);
+
   for (const nodeKey of graph.keys()) {
-    distanceFromSourceTo.set(nodeKey, Number.MAX_SAFE_INTEGER);
-    previous.set(nodeKey, undefined);
-    unvisitedNodes.push(nodeKey);
+    if (nodeKey !== sourceKey) {
+      distanceFromSourceTo.set(nodeKey, Number.MAX_SAFE_INTEGER);
+      previous.set(nodeKey, undefined);
+    }
   }
-  distanceFromSourceTo.set(sourceKey, 0);
 
   let minVertex = sourceKey;
-  while (unvisitedNodes.length) {
-    let min = Number.MAX_SAFE_INTEGER;
-    let minVertexIndex = -1;
-    unvisitedNodes.forEach((vertex, i) => {
-      const distance = distanceFromSourceTo.get(vertex)!;
+  while (!nodeQueue.isEmpty()) {
+    minVertex = nodeQueue.dequeue();
 
-      if (distance < min) {
-        min = distance;
-        minVertexIndex = i;
-      }
-    });
-
-    minVertex = unvisitedNodes[minVertexIndex];
     const { coordinate } = parseNodeKey(minVertex);
     if (coordinate.row === target.row && coordinate.column === target.column) {
       break;
     }
 
-    unvisitedNodes.splice(minVertexIndex, 1);
-
     for (const [neighborKey, neighborHeatLoss] of graph.get(minVertex)!.entries()) {
-      if (!unvisitedNodes.includes(neighborKey)) {
-        continue;
-      }
-
       const distanceFromRootToNeighbor = distanceFromSourceTo.get(minVertex)! + neighborHeatLoss;
       if (distanceFromRootToNeighbor < distanceFromSourceTo.get(neighborKey)!) {
         distanceFromSourceTo.set(neighborKey, distanceFromRootToNeighbor);
         previous.set(neighborKey, minVertex);
+        nodeQueue.setPriority(neighborKey, distanceFromRootToNeighbor);
       }
     }
   }
