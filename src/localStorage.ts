@@ -30,6 +30,26 @@ export const getInput = (day: number, part: number): string => {
   return cache[getDayPartKey(day, part)] ?? '';
 };
 
+export const getCurrentDayIndex = (): number | undefined => {
+  const cache = getCache();
+  const currentDay: string | undefined = cache['currentDayIndex'];
+  if (currentDay) {
+    return parseInt(currentDay, 10);
+  }
+};
+
+export const setCurrentDayIndex = (dayIndex: number): void => {
+  const cache = getCache();
+  cache['currentDayIndex'] = dayIndex.toString();
+
+  try {
+    const cacheStr = JSON.stringify(cache);
+    localStorage.setItem(LOCAL_STORAGE_KEY, cacheStr);
+  } catch (e) {
+    console.error(e);
+  }
+};
+
 const getCache = (): Cache => {
   const cacheStr = localStorage.getItem(LOCAL_STORAGE_KEY);
   if (!cacheStr) {

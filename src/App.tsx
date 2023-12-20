@@ -3,6 +3,8 @@ import Tab, { TabProps } from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import { lazy, Suspense, useState } from 'react';
 
+import { getCurrentDayIndex, setCurrentDayIndex } from './localStorage';
+
 type DayPanelProps = {
   children: React.ReactNode;
   index: number;
@@ -47,7 +49,7 @@ function getDayPanelProps(
 }
 
 export default function App() {
-  const [value, setValue] = useState(0);
+  const [value, setValue] = useState(getCurrentDayIndex() ?? 0);
 
   const DayComponents = [
     lazy(() => import('./components/day20')),
@@ -89,7 +91,10 @@ export default function App() {
           variant="scrollable"
           scrollButtons="auto"
           orientation="vertical"
-          onChange={(_, value) => setValue(value)}
+          onChange={(_, value) => {
+            setCurrentDayIndex(value);
+            setValue(value);
+          }}
           aria-label="Day tabs"
         >
           {DayComponents.map((_day, i) => {
