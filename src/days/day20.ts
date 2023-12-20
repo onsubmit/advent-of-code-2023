@@ -1,9 +1,10 @@
 import { getLeastCommonMultipleForArray } from '../math';
 
-type ModuleType = 'flip-flop' | 'conjuction' | 'broadcast';
+type ModuleType = 'flip-flop' | 'conjunction' | 'broadcast';
 type Pulse = 'high' | 'low';
 
 type Module = {
+  name: string;
   destinations: string[];
 } & (
   | {
@@ -14,7 +15,7 @@ type Module = {
       isOn: boolean;
     }
   | {
-      type: 'conjuction';
+      type: 'conjunction';
       memory: Map<string, Pulse>;
     }
 );
@@ -32,17 +33,19 @@ type Accumulators = {
 
 type Modules = Map<string, Module>;
 
-const buildModule = (type: ModuleType, destinations: string[]): Module => {
+const buildModule = (type: ModuleType, name: string, destinations: string[]): Module => {
   if (type === 'flip-flop') {
     return {
+      name,
       type,
       isOn: false,
       destinations,
     };
   }
 
-  if (type === 'conjuction') {
+  if (type === 'conjunction') {
     return {
+      name,
       type,
       destinations,
       memory: new Map(),
@@ -50,6 +53,7 @@ const buildModule = (type: ModuleType, destinations: string[]): Module => {
   }
 
   return {
+    name,
     type,
     destinations,
   };
@@ -73,19 +77,19 @@ const getModules = (input: string): Modules => {
       moduleType = 'broadcast';
       moduleName = prefix;
     } else {
-      moduleType = prefix.at(0) === '%' ? 'flip-flop' : 'conjuction';
+      moduleType = prefix.at(0) === '%' ? 'flip-flop' : 'conjunction';
       moduleName = prefix.slice(1);
     }
 
     const destinations = suffix.split(',').map((p) => p.trim());
-    modules.set(moduleName, buildModule(moduleType, destinations));
+    modules.set(moduleName, buildModule(moduleType, moduleName, destinations));
   });
 
-  // Set initial memory for conjuction modules.
+  // Set initial memory for conjunction modules.
   for (const [name, module] of modules.entries()) {
     for (const destination of module.destinations) {
       const destinationModule = modules.get(destination);
-      if (destinationModule?.type === 'conjuction') {
+      if (destinationModule?.type === 'conjunction') {
         destinationModule.memory.set(name, 'low');
       }
     }
@@ -99,6 +103,7 @@ const handlePulse = (
   moduleName: string,
   pulse: Pulse,
   from: string,
+  inputsToFinalModule: string[],
   accumulators: Accumulators
 ): Array<SentPulse> => {
   //console.log(`${from} -${pulse}-> ${moduleName}`);
@@ -113,7 +118,7 @@ const handlePulse = (
   if (
     pulse === 'low' &&
     !accumulators.lowPulseIterations.has(moduleName) &&
-    ['nh', 'dr', 'xm', 'tr'].includes(moduleName)
+    inputsToFinalModule.includes(moduleName)
   ) {
     accumulators.lowPulseIterations.set(moduleName, accumulators.buttonPresses);
   }
@@ -145,7 +150,7 @@ const handlePulse = (
       }
       break;
     }
-    case 'conjuction': {
+    case 'conjunction': {
       // When a pulse is received, the conjunction module first updates its memory for that input.
       module.memory.set(from, pulse);
 
@@ -167,6 +172,7 @@ const handlePulse = (
 
 const pressButton = (
   modules: Modules,
+  inputsToFinalModule: string[] = [],
   accumulators: Accumulators = {
     lowPulseIterations: new Map(),
     buttonPresses: 0,
@@ -187,7 +193,14 @@ const pressButton = (
         highIncrement++;
       }
 
-      const futurePulsesToSend = handlePulse(modules, to, pulse, from, accumulators);
+      const futurePulsesToSend = handlePulse(
+        modules,
+        to,
+        pulse,
+        from,
+        inputsToFinalModule,
+        accumulators
+      );
       tempQueue.push(...futurePulsesToSend);
     }
     queue = tempQueue;
@@ -218,9 +231,25 @@ export const getPartTwoSolution = (input: string): string => {
     buttonPresses: 0,
   };
 
-  while (accumulators.lowPulseIterations.size < 4) {
+  const finalModule = [...modules.values()].find(
+    (m) => m.type === 'conjunction' && m.destinations.length === 1 && m.destinations[0] === 'rx'
+  );
+
+  if (!finalModule) {
+    throw new Error('Input is horked');
+  }
+
+  const inputsToFinalModule = [...modules.values()]
+    .filter((m) => m.destinations.includes(finalModule.name))
+    .map((m) => m.name);
+
+  if (!inputsToFinalModule.length) {
+    throw new Error('Input is horked');
+  }
+
+  while (accumulators.lowPulseIterations.size < inputsToFinalModule.length) {
     accumulators.buttonPresses++;
-    pressButton(modules, accumulators);
+    pressButton(modules, inputsToFinalModule, accumulators);
   }
 
   const minButtonPresses = getLeastCommonMultipleForArray([
