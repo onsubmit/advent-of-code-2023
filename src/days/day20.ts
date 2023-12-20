@@ -19,7 +19,15 @@ type Module = {
     }
 );
 
-export const getPartOneSolution = (input: string): string => {
+type SentPulse = {
+  from: string;
+  to: string;
+  pulse: Pulse;
+};
+
+type Modules = Map<string, Module>;
+
+const getModules = (input: string): Modules => {
   const lines = input.split('\n').filter(Boolean);
 
   // broadcaster -> a, b, c
@@ -69,6 +77,7 @@ export const getPartOneSolution = (input: string): string => {
     }
   });
 
+  // Set initial memory for conjuction modules.
   for (const [name, module] of modules.entries()) {
     for (const connected of module.connectedModuleNames) {
       const connectedModule = modules.get(connected);
@@ -78,82 +87,95 @@ export const getPartOneSolution = (input: string): string => {
     }
   }
 
-  let lowPulses = 0;
-  let highPulses = 0;
-  const handlePulse = (
-    moduleName: string,
-    pulse: Pulse,
-    from: string
-  ): Array<{ name: string; pulse: Pulse; from: string }> => {
-    //console.log(`${from} -${pulse}-> ${moduleName}`);
-    if (pulse === 'low') {
-      lowPulses++;
-    } else {
-      highPulses++;
-    }
+  return modules;
+};
 
-    const module = modules.get(moduleName);
-    if (!module) {
-      return [];
-    }
+const handlePulse = (
+  modules: Modules,
+  moduleName: string,
+  pulse: Pulse,
+  from: string
+): Array<SentPulse> => {
+  //console.log(`${from} -${pulse}-> ${moduleName}`);
+  const module = modules.get(moduleName);
+  if (!module) {
+    return [];
+  }
 
-    const { type, connectedModuleNames } = module;
+  const { type, connectedModuleNames } = module;
 
-    const newPulsesToSend: Array<{ name: string; pulse: Pulse; from: string }> = [];
-    switch (type) {
-      case 'broadcast': {
-        for (const connected of connectedModuleNames) {
-          newPulsesToSend.push({ name: connected, pulse, from: moduleName });
-        }
-        break;
+  const newPulsesToSend: Array<SentPulse> = [];
+  switch (type) {
+    case 'broadcast': {
+      for (const connected of connectedModuleNames) {
+        newPulsesToSend.push({ to: connected, pulse, from: moduleName });
       }
-      case 'flip-flop': {
-        if (pulse === 'low') {
-          if (module.isOn) {
-            module.isOn = false;
-            for (const connected of connectedModuleNames) {
-              newPulsesToSend.push({ name: connected, pulse: 'low', from: moduleName });
-            }
-          } else {
-            module.isOn = true;
-            for (const connected of connectedModuleNames) {
-              newPulsesToSend.push({ name: connected, pulse: 'high', from: moduleName });
-            }
-          }
-        }
-        break;
-      }
-      case 'conjuction': {
-        module.memory.set(from, pulse);
-        const allHigh = [...module.memory.values()].every((p) => p === 'high');
+      break;
+    }
+    case 'flip-flop': {
+      if (pulse === 'low') {
         for (const connected of connectedModuleNames) {
           newPulsesToSend.push({
-            name: connected,
-            pulse: allHigh ? 'low' : 'high',
+            to: connected,
+            pulse: module.isOn ? 'low' : 'high',
             from: moduleName,
           });
         }
-        break;
+
+        module.isOn = !module.isOn;
       }
+      break;
     }
+    case 'conjuction': {
+      module.memory.set(from, pulse);
+      const allHigh = [...module.memory.values()].every((p) => p === 'high');
+      for (const connected of connectedModuleNames) {
+        newPulsesToSend.push({
+          to: connected,
+          pulse: allHigh ? 'low' : 'high',
+          from: moduleName,
+        });
+      }
+      break;
+    }
+  }
 
-    return newPulsesToSend;
-  };
+  return newPulsesToSend;
+};
 
-  for (let i = 0; i < 1000; i++) {
-    let queue: Array<{ name: string; pulse: Pulse; from: string }> = [
-      { name: 'broadcaster', pulse: 'low', from: 'button' },
-    ];
-    let tempQueue: Array<{ name: string; pulse: Pulse; from: string }> = [];
+const pressButton = (modules: Modules) => {
+  let lowPulses = 0;
+  let highPulses = 0;
+
+  let tempQueue: Array<SentPulse> = [];
+  let queue: Array<SentPulse> = [{ from: 'button', to: 'broadcaster', pulse: 'low' }];
+  while (queue.length) {
+    tempQueue = [];
     while (queue.length) {
-      tempQueue = [];
-      while (queue.length) {
-        const pulse = queue.shift()!;
-        const newPulses = handlePulse(pulse.name, pulse.pulse, pulse.from);
-        tempQueue.push(...newPulses);
+      const { from, pulse, to } = queue.shift()!;
+      const newPulses = handlePulse(modules, to, pulse, from);
+      if (pulse === 'low') {
+        lowPulses++;
+      } else {
+        highPulses++;
       }
-      queue = tempQueue;
+      tempQueue.push(...newPulses);
     }
+    queue = tempQueue;
+  }
+
+  return { lowPulses, highPulses };
+};
+
+export const getPartOneSolution = (input: string): string => {
+  const modules = getModules(input);
+
+  let lowPulses = 0;
+  let highPulses = 0;
+  for (let i = 0; i < 1000; i++) {
+    const { lowPulses: l, highPulses: h } = pressButton(modules);
+    lowPulses += l;
+    highPulses += h;
   }
 
   const answer = lowPulses * highPulses;
